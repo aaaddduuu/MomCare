@@ -1,0 +1,175 @@
+{
+	"bsonType": "object",
+	"required": ["user_id", "report_type"],
+	"permission": {
+		"read": "doc.user_id == auth.uid",
+		"create": "doc.user_id == auth.uid",
+		"update": "doc.user_id == auth.uid",
+		"delete": "doc.user_id == auth.uid"
+	},
+	"properties": {
+		"_id": {
+			"description": "报告唯一标识"
+		},
+		"user_id": {
+			"bsonType": "string",
+			"description": "用户 ID (关联 mom_users._id)",
+			"title": "用户ID",
+			"foreignKey": "mom_users._id"
+		},
+		"report_name": {
+			"bsonType": "string",
+			"description": "报告名称",
+			"title": "报告名称",
+			"maxLength": 100
+		},
+		"report_type": {
+			"bsonType": "string",
+			"description": "报告类型",
+			"title": "报告类型",
+			"enum": [
+				"blood_routine",
+				"urine_routine",
+				"down_screening",
+				"glucose_tolerance",
+				"ultrasound",
+				"nt_ultrasound",
+				"anomaly_ultrasound",
+				"cardiotocography",
+				"other"
+			]
+		},
+		"report_date": {
+			"bsonType": "date",
+			"description": "报告/检查日期",
+			"title": "报告日期"
+		},
+		"hospital_name": {
+			"bsonType": "string",
+			"description": "医院名称",
+			"title": "医院名称",
+			"maxLength": 100
+		},
+		"file_urls": {
+			"bsonType": "array",
+			"description": "报告图片/PDF 文件 URL 列表",
+			"title": "文件列表",
+			"arrayType": "string"
+		},
+		"file_type": {
+			"bsonType": "string",
+			"description": "文件类型",
+			"title": "文件类型",
+			"enum": ["image", "pdf", "mixed"],
+			"default": "image"
+		},
+		"ocr_status": {
+			"bsonType": "string",
+			"description": "OCR 识别状态",
+			"title": "OCR状态",
+			"enum": ["pending", "processing", "completed", "failed"],
+			"default": "pending"
+		},
+		"ocr_text": {
+			"bsonType": "string",
+			"description": "OCR 提取的原始文本",
+			"title": "OCR文本"
+		},
+		"ocr_confidence": {
+			"bsonType": "decimal",
+			"description": "OCR 识别置信度 (0-1)",
+			"title": "OCR置信度",
+			"minimum": 0,
+			"maximum": 1
+		},
+		"ai_status": {
+			"bsonType": "string",
+			"description": "AI 解读状态",
+			"title": "AI解读状态",
+			"enum": ["pending", "processing", "completed", "failed"],
+			"default": "pending"
+		},
+		"llm_used": {
+			"bsonType": "string",
+			"description": "生成此报告解读所使用的 LLM 模型",
+			"title": "使用LLM",
+			"enum": ["deepseek", "qwen", "kimi"]
+		},
+		"ai_result": {
+			"bsonType": "object",
+			"description": "AI 解读结构化结果",
+			"title": "AI解读结果",
+			"properties": {
+				"summary": {
+					"bsonType": "string",
+					"description": "整体总结"
+				},
+				"indicators": {
+					"bsonType": "array",
+					"description": "指标解读列表",
+					"arrayType": "object"
+				},
+				"abnormal_count": {
+					"bsonType": "int",
+					"description": "异常指标数量"
+				},
+				"overall_status": {
+					"bsonType": "string",
+					"description": "整体状态 (normal/abnormal/warning)",
+					"enum": ["normal", "abnormal", "warning"]
+				},
+				"recommendations": {
+					"bsonType": "array",
+					"description": "建议列表",
+					"arrayType": "string"
+				},
+				"disclaimer": {
+					"bsonType": "string",
+					"description": "免责声明"
+				}
+			}
+		},
+		"abnormal_indicators": {
+			"bsonType": "array",
+			"description": "异常指标列表",
+			"title": "异常指标",
+			"arrayType": "object"
+		},
+		"is_abnormal": {
+			"bsonType": "bool",
+			"description": "是否存在异常指标",
+			"title": "是否异常",
+			"default": false
+		},
+		"week_of_pregnancy": {
+			"bsonType": "int",
+			"description": "检查时的孕周",
+			"title": "孕周"
+		},
+		"is_favorite": {
+			"bsonType": "bool",
+			"description": "是否收藏",
+			"title": "是否收藏",
+			"default": false
+		},
+		"tags": {
+			"bsonType": "array",
+			"description": "自定义标签",
+			"title": "标签",
+			"arrayType": "string"
+		},
+		"create_time": {
+			"bsonType": "date",
+			"description": "创建时间",
+			"title": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"update_time": {
+			"bsonType": "date",
+			"description": "更新时间",
+			"title": "更新时间"
+		}
+	}
+}

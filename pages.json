@@ -1,17 +1,75 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"pages": [
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "孕期记录",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/knowledge/index",
+			"style": {
+				"navigationBarTitleText": "知识中心",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/reports/index",
+			"style": {
+				"navigationBarTitleText": "报告管家",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/profile/index",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
 			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
+		"navigationBarTitleText": "孕伴 MomCare",
+		"navigationBarBackgroundColor": "#F5F7FA",
+		"backgroundColor": "#F5F7FA"
+	},
+	"tabBar": {
+		"color": "#757575",
+		"selectedColor": "#C2185B",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "white",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "孕期记录",
+				"iconPath": "static/tabbar/home.png",
+				"selectedIconPath": "static/tabbar/home-active.png"
+			},
+			{
+				"pagePath": "pages/knowledge/index",
+				"text": "知识中心",
+				"iconPath": "static/tabbar/knowledge.png",
+				"selectedIconPath": "static/tabbar/knowledge-active.png"
+			},
+			{
+				"pagePath": "pages/reports/index",
+				"text": "报告管家",
+				"iconPath": "static/tabbar/reports.png",
+				"selectedIconPath": "static/tabbar/reports-active.png"
+			},
+			{
+				"pagePath": "pages/profile/index",
+				"text": "我的",
+				"iconPath": "static/tabbar/profile.png",
+				"selectedIconPath": "static/tabbar/profile-active.png"
+			}
+		]
 	},
 	"uniIdRouter": {}
 }

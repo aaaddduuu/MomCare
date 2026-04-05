@@ -1,0 +1,243 @@
+{
+	"bsonType": "object",
+	"required": ["title", "content", "target_week_start"],
+	"permission": {
+		"read": true,
+		"create": false,
+		"update": false,
+		"delete": false
+	},
+	"properties": {
+		"_id": {
+			"description": "文章唯一标识"
+		},
+		"title": {
+			"bsonType": "string",
+			"description": "文章标题",
+			"title": "标题",
+			"maxLength": 100,
+			"trim": "both"
+		},
+		"subtitle": {
+			"bsonType": "string",
+			"description": "副标题",
+			"title": "副标题",
+			"maxLength": 200
+		},
+		"excerpt": {
+			"bsonType": "string",
+			"description": "摘要/简介",
+			"title": "摘要",
+			"maxLength": 500
+		},
+		"content": {
+			"bsonType": "string",
+			"description": "文章内容 (富文本 HTML 或 Markdown)",
+			"title": "内容"
+		},
+		"cover_image": {
+			"bsonType": "string",
+			"description": "封面图片 URL",
+			"title": "封面图片"
+		},
+		"cover_gradient": {
+			"bsonType": "string",
+			"description": "封面渐变样式 class",
+			"title": "封面渐变"
+		},
+		"cover_icon": {
+			"bsonType": "string",
+			"description": "封面图标 emoji",
+			"title": "封面图标"
+		},
+		"category": {
+			"bsonType": "string",
+			"description": "文章分类",
+			"title": "分类",
+			"enum": [
+				"early_pregnancy",
+				"mid_pregnancy",
+				"late_pregnancy",
+				"checkup",
+				"nutrition",
+				"exercise",
+				"mental_health",
+				"parenting",
+				"emergency"
+			]
+		},
+		"tags": {
+			"bsonType": "array",
+			"description": "文章标签",
+			"title": "标签",
+			"arrayType": "string"
+		},
+		"target_week_start": {
+			"bsonType": "int",
+			"description": "适用孕周起始 (0-40)",
+			"title": "适用孕周起始",
+			"minimum": 0,
+			"maximum": 40
+		},
+		"target_week_end": {
+			"bsonType": "int",
+			"description": "适用孕周结束 (0-40, null 表示全孕期)",
+			"title": "适用孕周结束",
+			"minimum": 0,
+			"maximum": 40
+		},
+		"is_postpartum": {
+			"bsonType": "bool",
+			"description": "是否为产后育儿内容",
+			"title": "产后内容",
+			"default": false
+		},
+		"postpartum_month_start": {
+			"bsonType": "int",
+			"description": "产后月龄起始 (0-6)",
+			"title": "产后月龄起始"
+		},
+		"postpartum_month_end": {
+			"bsonType": "int",
+			"description": "产后月龄结束 (0-6)",
+			"title": "产后月龄结束"
+		},
+		"doctor_certified": {
+			"bsonType": "bool",
+			"description": "是否经过医生认证 (PGC内容)",
+			"title": "医生认证",
+			"default": true
+		},
+		"reviewer_id": {
+			"bsonType": "string",
+			"description": "审核医生 ID",
+			"title": "审核医生ID"
+		},
+		"reviewer_name": {
+			"bsonType": "string",
+			"description": "审核医生姓名",
+			"title": "审核医生"
+		},
+		"reviewer_title": {
+			"bsonType": "string",
+			"description": "审核医生职称",
+			"title": "医生职称",
+			"enum": ["主治医师", "副主任医师", "主任医师", "专家"]
+		},
+		"reviewer_hospital": {
+			"bsonType": "string",
+			"description": "审核医生所属医院",
+			"title": "所属医院"
+		},
+		"review_time": {
+			"bsonType": "date",
+			"description": "审核时间",
+			"title": "审核时间"
+		},
+		"article_type": {
+			"bsonType": "string",
+			"description": "文章类型",
+			"title": "文章类型",
+			"enum": ["article", "video", "audio"],
+			"default": "article"
+		},
+		"video_url": {
+			"bsonType": "string",
+			"description": "视频 URL (当 article_type=video 时)",
+			"title": "视频URL"
+		},
+		"video_duration": {
+			"bsonType": "int",
+			"description": "视频时长 (秒)",
+			"title": "视频时长"
+		},
+		"audio_url": {
+			"bsonType": "string",
+			"description": "音频 URL (当 article_type=audio 时)",
+			"title": "音频URL"
+		},
+		"audio_duration": {
+			"bsonType": "int",
+			"description": "音频时长 (秒)",
+			"title": "音频时长"
+		},
+		"read_time": {
+			"bsonType": "int",
+			"description": "预计阅读时间 (分钟)",
+			"title": "阅读时间",
+			"default": 5
+		},
+		"views": {
+			"bsonType": "int",
+			"description": "浏览量",
+			"title": "浏览量",
+			"default": 0
+		},
+		"likes": {
+			"bsonType": "int",
+			"description": "点赞数",
+			"title": "点赞数",
+			"default": 0
+		},
+		"favorites": {
+			"bsonType": "int",
+			"description": "收藏数",
+			"title": "收藏数",
+			"default": 0
+		},
+		"shares": {
+			"bsonType": "int",
+			"description": "分享数",
+			"title": "分享数",
+			"default": 0
+		},
+		"is_hot": {
+			"bsonType": "bool",
+			"description": "是否热门文章",
+			"title": "热门",
+			"default": false
+		},
+		"is_important": {
+			"bsonType": "bool",
+			"description": "是否重要必读",
+			"title": "必读",
+			"default": false
+		},
+		"sort_order": {
+			"bsonType": "int",
+			"description": "排序权重 (越大越靠前)",
+			"title": "排序权重",
+			"default": 0
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "发布状态",
+			"title": "状态",
+			"enum": ["draft", "published", "archived"],
+			"default": "draft"
+		},
+		"publish_time": {
+			"bsonType": "date",
+			"description": "发布时间",
+			"title": "发布时间"
+		},
+		"author_id": {
+			"bsonType": "string",
+			"description": "作者/编辑 ID",
+			"title": "作者ID"
+		},
+		"create_time": {
+			"bsonType": "date",
+			"description": "创建时间",
+			"title": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"update_time": {
+			"bsonType": "date",
+			"description": "更新时间",
+			"title": "更新时间"
+		}
+	}
+}
