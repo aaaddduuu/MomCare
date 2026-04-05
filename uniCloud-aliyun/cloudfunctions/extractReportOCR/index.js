@@ -6,7 +6,7 @@
  */
 
 // Load environment variables from .env file
-require('dotenv').config();
+require('dotenv').config({ path: __dirname + '/.env' });
 
 exports.main = async (event, context) => {
 	const { fileID } = event;

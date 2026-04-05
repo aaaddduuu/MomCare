@@ -7,7 +7,7 @@
   "author": "MomCare Team",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.6.1"
   },
   "cloudfunction-config": {
     "memorySize": 512,

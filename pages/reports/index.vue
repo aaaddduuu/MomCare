@@ -6,30 +6,6 @@
 			<text class="page-subtitle">AI 智能解读您的产检报告</text>
 		</view>
 
-		<!-- AI Model Selector -->
-		<view class="model-selector-wrapper">
-			<view class="selector-header">
-				<text class="selector-icon">🤖</text>
-				<text class="selector-title">选择 AI 医生</text>
-			</view>
-			<view class="model-segmented">
-				<view
-					v-for="model in aiModels"
-					:key="model.id"
-					class="model-option"
-					:class="{ 'model-active': selectedModel === model.id }"
-					@tap="selectModel(model.id)"
-				>
-					<text class="model-name">{{ model.name }}</text>
-					<text class="model-desc">{{ model.desc }}</text>
-				</view>
-			</view>
-			<view class="selector-footer">
-				<text class="selected-model-text">当前选择: {{ selectedModelData.name }}</text>
-				<text class="selected-model-desc">{{ selectedModelData.desc }}</text>
-			</view>
-		</view>
-
 		<!-- Hero Action Area: Upload Card -->
 		<view class="upload-hero-card" @tap="handleUploadReport">
 			<view class="upload-icon-wrapper">
@@ -45,236 +21,81 @@
 			</view>
 		</view>
 
-		<!-- Quick Upload Options -->
-		<view class="quick-actions">
-			<view class="quick-action-item" @tap="handleCamera">
-				<view class="quick-icon-wrapper camera">
-					<text class="quick-icon">📷</text>
-				</view>
-				<text class="quick-label">拍照上传</text>
-			</view>
-			<view class="quick-action-item" @tap="handleAlbum">
-				<view class="quick-icon-wrapper album">
-					<text class="quick-icon">🖼️</text>
-				</view>
-				<text class="quick-label">相册选择</text>
-			</view>
-			<view class="quick-action-item" @tap="handlePdf">
-				<view class="quick-icon-wrapper pdf">
-					<text class="quick-icon">📑</text>
-				</view>
-				<text class="quick-label">PDF 文件</text>
-			</view>
-		</view>
-
 		<!-- Report List Header -->
 		<view class="list-header">
 			<text class="list-title">报告档案</text>
-			<view class="list-filter">
-				<text class="filter-text">全部</text>
+			<view class="list-filter" @tap="handleFilterSelect">
+				<text class="filter-text">{{ currentFilterText }}</text>
 				<text class="filter-arrow">▼</text>
 			</view>
 		</view>
 
 		<!-- Report List -->
 		<view class="report-list">
-			<!-- Report Item 1: Abnormal - Blood Routine -->
-			<view class="report-card" @tap="viewReport(reportList[0])">
+			<!-- Empty State -->
+			<view v-if="reportList.length === 0 && !isLoadingReports" class="empty-state">
+				<text class="empty-icon">📋</text>
+				<text class="empty-title">暂无报告记录</text>
+				<text class="empty-subtitle">上传产检报告，AI 智能解读</text>
+			</view>
+
+			<!-- Loading State -->
+			<view v-if="isLoadingReports" class="loading-state">
+				<text class="loading-text">加载中...</text>
+			</view>
+
+			<!-- Dynamic Report Cards -->
+			<view
+				v-for="report in reportList"
+				:key="report._id"
+				class="report-card"
+				@tap="viewReportDetail(report)"
+			>
 				<view class="report-header">
 					<view class="report-type-wrapper">
-						<text class="report-type-icon">🩸</text>
+						<text class="report-type-icon">{{ getReportIcon(report.report_type) }}</text>
 						<view class="report-type-info">
-							<text class="report-title">血常规检查</text>
-							<text class="report-date">2024年4月28日 09:30</text>
+							<text class="report-title">{{ report.report_name || getReportTypeName(report.report_type) }}</text>
+							<text class="report-date">{{ formatDate(report.create_time) }}</text>
 						</view>
 					</view>
 					<view class="report-status-wrapper">
-						<view class="status-badge abnormal-badge">
+						<view
+							class="status-badge"
+							:class="getReportStatusClass(report)"
+						>
 							<text class="status-dot"></text>
-							<text class="status-text">异常</text>
+							<text class="status-text">{{ getReportStatusText(report) }}</text>
 						</view>
 					</view>
 				</view>
-				<view class="report-preview">
-					<view class="preview-item abnormal-item">
-						<text class="preview-label">血红蛋白</text>
-						<text class="preview-value abnormal-value">95 g/L</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">白细胞</text>
-						<text class="preview-value">8.5×10⁹/L</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">血小板</text>
-						<text class="preview-value">210×10⁹/L</text>
+
+				<!-- Report Preview - Show key indicators from AI result -->
+				<view v-if="report.ai_result && report.ai_result.indicators && report.ai_result.indicators.length > 0" class="report-preview">
+					<view
+						v-for="(indicator, index) in report.ai_result.indicators.slice(0, 3)"
+						:key="index"
+						class="preview-item"
+						:class="{ 'abnormal-item': indicator.severity === 'warning' || indicator.severity === 'danger' }"
+					>
+						<text class="preview-label">{{ indicator.name }}</text>
+						<text
+							class="preview-value"
+							:class="{
+								'abnormal-value': indicator.severity === 'danger',
+								'warning-value': indicator.severity === 'warning',
+								'normal-value': indicator.severity === 'normal'
+							}"
+						>{{ indicator.value }}</text>
 					</view>
 				</view>
+
 				<view class="report-footer">
-					<view class="ai-status analyzed">
-						<text class="ai-icon">✨</text>
-						<text class="ai-text">AI 已解读</text>
+					<view class="ai-status" :class="report.ai_status === 'completed' ? 'analyzed' : 'pending'">
+						<text class="ai-icon">{{ report.ai_status === 'completed' ? '✨' : '⏳' }}</text>
+						<text class="ai-text">{{ report.ai_status === 'completed' ? 'AI 已解读' : '待解读' }}</text>
 					</view>
 					<text class="report-action">查看详情 →</text>
-				</view>
-			</view>
-
-			<!-- Report Item 2: Normal - Down Syndrome Screening -->
-			<view class="report-card" @tap="viewReport(reportList[1])">
-				<view class="report-header">
-					<view class="report-type-wrapper">
-						<text class="report-type-icon">🧬</text>
-						<view class="report-type-info">
-							<text class="report-title">唐氏筛查</text>
-							<text class="report-date">2024年4月15日 10:00</text>
-						</view>
-					</view>
-					<view class="report-status-wrapper">
-						<view class="status-badge normal-badge">
-							<text class="status-dot"></text>
-							<text class="status-text">正常</text>
-						</view>
-					</view>
-				</view>
-				<view class="report-preview">
-					<view class="preview-item">
-						<text class="preview-label">风险评估</text>
-						<text class="preview-value normal-value">低风险</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">AFP</text>
-						<text class="preview-value">45.2</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">hCGβ</text>
-						<text class="preview-value">2.3</text>
-					</view>
-				</view>
-				<view class="report-footer">
-					<view class="ai-status analyzed">
-						<text class="ai-icon">✨</text>
-						<text class="ai-text">AI 已解读</text>
-					</view>
-					<text class="report-action">查看详情 →</text>
-				</view>
-			</view>
-
-			<!-- Report Item 3: Pending - Ultrasound -->
-			<view class="report-card" @tap="viewReport(reportList[2])">
-				<view class="report-header">
-					<view class="report-type-wrapper">
-						<text class="report-type-icon">🔬</text>
-						<view class="report-type-info">
-							<text class="report-title">B超检查</text>
-							<text class="report-date">2024年4月20日 14:30</text>
-						</view>
-					</view>
-					<view class="report-status-wrapper">
-						<view class="status-badge normal-badge">
-							<text class="status-dot"></text>
-							<text class="status-text">正常</text>
-						</view>
-					</view>
-				</view>
-				<view class="report-preview">
-					<view class="preview-item">
-						<text class="preview-label">胎位</text>
-						<text class="preview-value">头位</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">胎心率</text>
-						<text class="preview-value">152 次/分</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">羊水指数</text>
-						<text class="preview-value">12.5 cm</text>
-					</view>
-				</view>
-				<view class="report-footer">
-					<view class="ai-status pending">
-						<text class="ai-icon">⏳</text>
-						<text class="ai-text">待解读</text>
-					</view>
-					<text class="report-action-primary" @tap.stop="handleAnalyzeReport(reportList[2])">一键解读</text>
-				</view>
-			</view>
-
-			<!-- Report Item 4: Normal - Urine Routine -->
-			<view class="report-card" @tap="viewReport(reportList[3])">
-				<view class="report-header">
-					<view class="report-type-wrapper">
-						<text class="report-type-icon">💧</text>
-						<view class="report-type-info">
-							<text class="report-title">尿常规检查</text>
-							<text class="report-date">2024年4月10日 08:15</text>
-						</view>
-					</view>
-					<view class="report-status-wrapper">
-						<view class="status-badge normal-badge">
-							<text class="status-dot"></text>
-							<text class="status-text">正常</text>
-						</view>
-					</view>
-				</view>
-				<view class="report-preview">
-					<view class="preview-item">
-						<text class="preview-label">蛋白质</text>
-						<text class="preview-value normal-value">阴性</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">葡萄糖</text>
-						<text class="preview-value normal-value">阴性</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">白细胞</text>
-						<text class="preview-value normal-value">阴性</text>
-					</view>
-				</view>
-				<view class="report-footer">
-					<view class="ai-status analyzed">
-						<text class="ai-icon">✨</text>
-						<text class="ai-text">AI 已解读</text>
-					</view>
-					<text class="report-action">查看详情 →</text>
-				</view>
-			</view>
-
-			<!-- Report Item 5: Pending - Glucose Tolerance -->
-			<view class="report-card" @tap="viewReport(reportList[4])">
-				<view class="report-header">
-					<view class="report-type-wrapper">
-						<text class="report-type-icon">🍬</text>
-						<view class="report-type-info">
-							<text class="report-title">糖耐量检查</text>
-							<text class="report-date">2024年3月25日 08:00</text>
-						</view>
-					</view>
-					<view class="report-status-wrapper">
-						<view class="status-badge warning-badge">
-							<text class="status-dot"></text>
-							<text class="status-text">注意</text>
-						</view>
-					</view>
-				</view>
-				<view class="report-preview">
-					<view class="preview-item warning-item">
-						<text class="preview-label">空腹血糖</text>
-						<text class="preview-value warning-value">5.4 mmol/L</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">1小时血糖</text>
-						<text class="preview-value">9.8 mmol/L</text>
-					</view>
-					<view class="preview-item">
-						<text class="preview-label">2小时血糖</text>
-						<text class="preview-value">7.2 mmol/L</text>
-					</view>
-				</view>
-				<view class="report-footer">
-					<view class="ai-status pending">
-						<text class="ai-icon">⏳</text>
-						<text class="ai-text">待解读</text>
-					</view>
-					<text class="report-action-primary" @tap.stop="handleAnalyzeReport(reportList[4])">一键解读</text>
 				</view>
 			</view>
 		</view>
@@ -375,320 +196,249 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 
-// AI Model Selection
-const aiModels = ref([
-	{
-		id: 'deepseek',
-		name: 'DeepSeek',
-		desc: '推理专家',
-		icon: '🧠'
-	},
-	{
-		id: 'qwen',
-		name: '通义千问',
-		desc: '均衡全能',
-		icon: '⚖️'
-	},
-	{
-		id: 'kimi',
-		name: 'Kimi',
-		desc: '长文专家',
-		icon: '📚'
-	}
-])
+// Default AI Model (hidden from UI, using DeepSeek by default)
+const DEFAULT_MODEL = 'deepseek'
 
-const selectedModel = ref('deepseek')
-
-const selectedModelData = computed(() => {
-	return aiModels.value.find(m => m.id === selectedModel.value) || aiModels.value[0]
-})
-
-const selectModel = (modelId) => {
-	selectedModel.value = modelId
-	// Save to user preferences (would connect to DB in production)
-	console.log('Model selected:', modelId)
-}
-
-// Mock report data
-const reportList = ref([
-	{
-		id: 1,
-		type: 'blood_routine',
-		title: '血常规检查',
-		date: '2024年4月28日 09:30',
-		icon: '🩸',
-		status: 'abnormal',
-		aiStatus: 'analyzed',
-		preview: [
-			{ label: '血红蛋白', value: '95 g/L', abnormal: true },
-			{ label: '白细胞', value: '8.5×10⁹/L', abnormal: false },
-			{ label: '血小板', value: '210×10⁹/L', abnormal: false }
-		]
-	},
-	{
-		id: 2,
-		type: 'down_screening',
-		title: '唐氏筛查',
-		date: '2024年4月15日 10:00',
-		icon: '🧬',
-		status: 'normal',
-		aiStatus: 'analyzed',
-		preview: [
-			{ label: '风险评估', value: '低风险', abnormal: false },
-			{ label: 'AFP', value: '45.2', abnormal: false },
-			{ label: 'hCGβ', value: '2.3', abnormal: false }
-		]
-	},
-	{
-		id: 3,
-		type: 'ultrasound',
-		title: 'B超检查',
-		date: '2024年4月20日 14:30',
-		icon: '🔬',
-		status: 'normal',
-		aiStatus: 'pending',
-		preview: [
-			{ label: '胎位', value: '头位', abnormal: false },
-			{ label: '胎心率', value: '152 次/分', abnormal: false },
-			{ label: '羊水指数', value: '12.5 cm', abnormal: false }
-		]
-	},
-	{
-		id: 4,
-		type: 'urine_routine',
-		title: '尿常规检查',
-		date: '2024年4月10日 08:15',
-		icon: '💧',
-		status: 'normal',
-		aiStatus: 'analyzed',
-		preview: [
-			{ label: '蛋白质', value: '阴性', abnormal: false },
-			{ label: '葡萄糖', value: '阴性', abnormal: false },
-			{ label: '白细胞', value: '阴性', abnormal: false }
-		]
-	},
-	{
-		id: 5,
-		type: 'glucose_tolerance',
-		title: '糖耐量检查',
-		date: '2024年3月25日 08:00',
-		icon: '🍬',
-		status: 'warning',
-		aiStatus: 'pending',
-		preview: [
-			{ label: '空腹血糖', value: '5.4 mmol/L', abnormal: false, warning: true },
-			{ label: '1小时血糖', value: '9.8 mmol/L', abnormal: false },
-			{ label: '2小时血糖', value: '7.2 mmol/L', abnormal: false }
-		]
-	}
-])
-
-// Upload handlers
-const handleUpload = () => {
-	console.log('Upload report')
-	uni.showActionSheet({
-		itemList: ['拍照上传', '相册选择', 'PDF 文件'],
-		success: (res) => {
-			console.log('Selected:', res.tapIndex)
-		}
-	})
-}
-
-const handleCamera = () => {
-	console.log('Camera upload')
-	uni.chooseImage({
-		count: 1,
-		sourceType: ['camera'],
-		success: (res) => {
-			console.log('Image selected:', res.tempFilePaths)
-		}
-	})
-}
-
-const handleAlbum = () => {
-	console.log('Album upload')
-	uni.chooseImage({
-		count: 9,
-		sourceType: ['album'],
-		success: (res) => {
-			console.log('Images selected:', res.tempFilePaths)
-		}
-	})
-}
-
-const handlePdf = () => {
-	console.log('PDF upload')
-	uni.showToast({
-		title: '请选择 PDF 文件',
-		icon: 'none'
-	})
-}
-
-// View report details
-const viewReport = (report) => {
-	console.log('View report:', report)
-	uni.navigateTo({
-		url: `/pages/reports/detail?id=${report.id}`
-	})
-}
+// Report List (loaded from database)
+const reportList = ref([])
+const isLoadingReports = ref(false)
 
 // AI Analysis Result
 const aiReportResult = ref(null)
 
+// Filter State
+const currentFilter = ref('all')
+const filterOptions = [
+	{ value: 'all', label: '全部报告' },
+	{ value: 'abnormal', label: '⚠️ 异常报告' },
+	{ value: 'lab', label: '🩸 检验化验' },
+	{ value: 'ultrasound', label: '🔬 B超影像' }
+]
+
+const currentFilterText = computed(() => {
+	const option = filterOptions.find(o => o.value === currentFilter.value)
+	return option?.label || '全部报告'
+})
+
+// Load reports from database on page show
+onShow(() => {
+	loadReports()
+})
+
+// Handle filter selection
+const handleFilterSelect = () => {
+	uni.showActionSheet({
+		itemList: filterOptions.map(o => o.label),
+		success: (res) => {
+			const selected = filterOptions[res.tapIndex]
+			currentFilter.value = selected.value
+			loadReports() // 选中后重新拉取数据
+		}
+	})
+}
+
+// Load reports from uniCloud database with filter
+const loadReports = async () => {
+	isLoadingReports.value = true
+	try {
+		const db = uniCloud.database()
+		const cmd = db.command
+
+		let query = db.collection('momcare_reports')
+
+		// Apply filter based on currentFilter.value
+		if (currentFilter.value === 'abnormal') {
+			// 只查异常的
+			query = query.where({ is_abnormal: true })
+		} else if (currentFilter.value === 'lab') {
+			// 用 cmd.in 匹配所有化验类
+			query = query.where({
+				report_type: cmd.in(['blood_routine', '尿常规', 'urine_routine', 'glucose_tolerance', 'down_screening'])
+			})
+		} else if (currentFilter.value === 'ultrasound') {
+			// 用 cmd.in 匹配所有B超类
+			query = query.where({
+				report_type: cmd.in(['ultrasound', 'B超', 'nt_ultrasound', 'anomaly_ultrasound'])
+			})
+		}
+
+		const res = await query
+			.orderBy('create_time', 'desc')
+			.get()
+
+		console.log('Loaded reports:', res.result.data)
+		reportList.value = res.result.data || []
+	} catch (error) {
+		console.error('Failed to load reports:', error)
+		uni.showToast({ title: '加载报告失败', icon: 'none' })
+	} finally {
+		isLoadingReports.value = false
+	}
+}
+// Save report to database after successful AI analysis
+const saveReportToDatabase = async (aiData, fileID, ocrText) => {
+	try {
+		const db = uniCloud.database()
+		const doc = {
+			user_id: '', // Will be auto-filled by uniCloud based on logged-in user
+			report_type: aiData.report_type || 'other',
+			report_name: aiData.report_type || '产检报告',
+			file_urls: [fileID],
+			file_type: 'image',
+			ocr_status: 'completed',
+			ocr_text: ocrText,
+			ai_status: 'completed',
+			llm_used: aiData.llm_used || DEFAULT_MODEL,
+			ai_result: {
+				report_type: aiData.report_type,
+				overall_summary: aiData.overall_summary,
+				normal_highlights: aiData.normal_highlights,
+				abnormal_indicators: aiData.abnormal_indicators || [],
+				action_suggestions: aiData.action_suggestions || [],
+				disclaimer: aiData.disclaimer
+			},
+			abnormal_indicators: aiData.abnormal_indicators || [],
+			is_abnormal: aiData.abnormal_indicators?.some(i => i.severity === 'warning' || i.severity === 'danger') || false,
+			create_time: Date.now() // 重点修复：加入时间戳，支持列表倒序
+		}
+
+		const res = await db.collection('momcare_reports').add(doc)
+		console.log('Report saved to database:', res)
+		
+		// 重新加载列表，让新数据出现在底部档案中
+		await loadReports()
+		return res
+	} catch (error) {
+		console.error('Failed to save report:', error)
+		uni.showToast({ title: '保存历史记录失败', icon: 'none' })
+	}
+}
+
+// View report detail - open AI popup with historical data
+const viewReportDetail = (report) => {
+	if (report.ai_result && report.ai_status === 'completed') {
+		aiReportResult.value = {
+			...report.ai_result,
+			llm_used: report.llm_used || DEFAULT_MODEL,
+			_id: report._id,
+			imageUrl: report.file_urls?.[0] || null
+		}
+	} else {
+		uni.showToast({ title: '该报告尚未解读', icon: 'none' })
+	}
+}
+
+// Utilities
+const getReportIcon = (reportType) => {
+	const iconMap = {
+		'blood_routine': '🩸', '尿常规': '💧', 'urine_routine': '💧',
+		'down_screening': '🧬', 'glucose_tolerance': '🍬',
+		'ultrasound': '🔬', 'nt_ultrasound': '🔬',
+		'anomaly_ultrasound': '🔬', 'cardiotocography': '💓', 'other': '📄'
+	}
+	return iconMap[reportType] || '📄'
+}
+
+const getReportTypeName = (reportType) => {
+	const nameMap = {
+		'blood_routine': '血常规检查', 'urine_routine': '尿常规检查',
+		'down_screening': '唐氏筛查', 'glucose_tolerance': '糖耐量检查',
+		'ultrasound': 'B超检查', 'nt_ultrasound': 'NT检查',
+		'anomaly_ultrasound': '大排畸检查', 'cardiotocography': '胎心监护', 'other': '其他检查'
+	}
+	return nameMap[reportType] || reportType || '产检报告'
+}
+
+const formatDate = (dateValue) => {
+	if (!dateValue) return ''
+	const date = new Date(dateValue)
+	const year = date.getFullYear()
+	const month = String(date.getMonth() + 1).padStart(2, '0')
+	const day = String(date.getDate()).padStart(2, '0')
+	const hour = String(date.getHours()).padStart(2, '0')
+	const minute = String(date.getMinutes()).padStart(2, '0')
+	return `${year}年${month}月${day}日 ${hour}:${minute}`
+}
+
+const getReportStatusClass = (report) => {
+	if (report.is_abnormal) return 'abnormal-badge'
+	if (report.ai_result?.abnormal_indicators?.some(i => i.severity === 'warning')) return 'warning-badge'
+	return 'normal-badge'
+}
+
+const getReportStatusText = (report) => {
+	if (report.is_abnormal) return '异常'
+	if (report.ai_result?.abnormal_indicators?.some(i => i.severity === 'warning')) return '注意'
+	return '正常'
+}
+
 // Handle Upload Report - Complete flow
 const handleUploadReport = async () => {
-	// Step 1: Choose image
 	uni.chooseMedia({
 		count: 1,
 		mediaType: ['image'],
 		sourceType: ['album', 'camera'],
 		success: async (res) => {
 			const tempFilePath = res.tempFiles[0].tempFilePath
-
-			// Step 2: Show uploading loading
-			uni.showLoading({
-				title: '图片上传中...',
-				mask: true
-			})
+			uni.showLoading({ title: '图片上传中...', mask: true })
 
 			try {
-				// Step 3: Upload to uniCloud Storage
 				const uploadRes = await uniCloud.uploadFile({
 					filePath: tempFilePath,
 					cloudPath: `medical_reports/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`
 				})
-
 				const fileID = uploadRes.fileID
 
-				// Step 4: Extract OCR text
-				uni.showLoading({
-					title: 'AI 识别文字中...',
-					mask: true
-				})
-
+				uni.showLoading({ title: 'AI 提取排版中...', mask: true })
 				const ocrRes = await uniCloud.callFunction({
 					name: 'extractReportOCR',
-					data: {
-						fileID: fileID
-					}
+					data: { fileID: fileID }
 				})
 
-				if (ocrRes.result.errCode !== 0) {
-					throw new Error(ocrRes.result.errMsg || 'OCR 提取失败')
-				}
+				if (ocrRes.result.errCode !== 0) throw new Error(ocrRes.result.errMsg || 'OCR 提取失败')
 
 				const realOcrText = ocrRes.result.data.text
-
-				// Step 5: Analyze with AI
 				await handleAnalyzeReportWithText(realOcrText, fileID)
 
 			} catch (error) {
 				uni.hideLoading()
 				console.error('Upload error:', error)
-				uni.showToast({
-					title: error.message || '上传失败，请重试',
-					icon: 'none'
-				})
+				uni.showToast({ title: error.message || '上传失败，请重试', icon: 'none' })
 			}
 		},
-		fail: (error) => {
-			console.error('Choose media error:', error)
-			uni.showToast({
-				title: '选择图片失败',
-				icon: 'none'
-			})
-		}
+		fail: () => {}
 	})
 }
 
-// Handle AI Analysis with real OCR text
-const handleAnalyzeReportWithText = async (ocrText, imageUrl = null) => {
-	console.log('Analyze with OCR text:', ocrText.substring(0, 100))
-
-	// Show loading
-	uni.showLoading({
-		title: 'AI 医生解读中...',
-		mask: true
-	})
-
+// Handle AI Analysis
+const handleAnalyzeReportWithText = async (ocrText, fileID = null) => {
+	uni.showLoading({ title: 'AI 医生解读中...', mask: true })
 	try {
-		// Call cloud function
 		const res = await uniCloud.callFunction({
 			name: 'analyzeReportAI',
-			data: {
-				ocrText: ocrText,
-				modelChoice: selectedModel.value
-			}
+			data: { ocrText: ocrText, modelChoice: DEFAULT_MODEL }
 		})
-
-		// Hide loading
 		uni.hideLoading()
 
 		if (res.result.errCode === 0) {
-			// Success - bind result to ref
-			aiReportResult.value = {
-				...res.result.data,
-				imageUrl: imageUrl
-			}
-
-			// Add new report to list
-			const newReport = {
-				id: Date.now(),
-				type: 'manual_upload',
-				title: res.result.data.report_type || '新上传报告',
-				date: new Date().toLocaleString('zh-CN'),
-				icon: '📄',
-				status: res.result.data.abnormal_indicators?.some(i => i.severity === 'danger' || i.severity === 'warning') ? 'warning' : 'normal',
-				aiStatus: 'analyzed',
-				preview: []
-			}
-
-			reportList.value.unshift(newReport)
-
-			uni.showToast({
-				title: '解读完成',
-				icon: 'success'
-			})
+			aiReportResult.value = { ...res.result.data, imageUrl: fileID }
+			
+			// 解读成功后，调用我们上面写的存储方法
+			if (fileID) await saveReportToDatabase(res.result.data, fileID, ocrText)
+			
+			uni.showToast({ title: '解读完成', icon: 'success' })
 		} else {
-			// Error
-			uni.showToast({
-				title: res.result.errMsg || '解读失败',
-				icon: 'none'
-			})
+			uni.showToast({ title: res.result.errMsg || '解读失败', icon: 'none' })
 		}
 	} catch (error) {
 		uni.hideLoading()
 		console.error('AI analysis error:', error)
-		uni.showToast({
-			title: '网络错误，请重试',
-			icon: 'none'
-		})
+		uni.showToast({ title: '网络错误，请重试', icon: 'none' })
 	}
 }
 
-// Handle AI Analysis (for existing reports - uses mock OCR for now)
-const handleAnalyzeReport = async (report) => {
-	console.log('Analyze report:', report)
-
-	// Mock OCR text for demonstration
-	const mockOcrText = `血常规检查报告
-检测日期：2024年4月20日
-------------------------------------------------
-项目名称                 结果     单位    参考范围
-白细胞(WBC)             8.5      10^9/L  4.0-10.0
-红细胞(RBC)             4.2      10^12/L 3.5-5.0
-血红蛋白(HGB)           95       g/L     110-150  ↓
-血小板(PLT)             210      10^9/L  100-300
-中性粒细胞比率          65       %       50-70
-淋巴细胞比率            28       %       20-40
-------------------------------------------------
-↓ 表示低于参考范围`
-
-	await handleAnalyzeReportWithText(mockOcrText)
-}
-
-// Close AI Result Modal
 const closeAiResult = () => {
 	aiReportResult.value = null
 }
@@ -722,97 +472,6 @@ const closeAiResult = () => {
 	font-size: 28rpx;
 	color: #757575;
 	line-height: 1.5;
-}
-
-/* AI Model Selector */
-.model-selector-wrapper {
-	background-color: #FFFFFF;
-	border-radius: 32rpx;
-	padding: 32rpx;
-	margin-bottom: 24rpx;
-}
-
-.selector-header {
-	display: flex;
-	align-items: center;
-	gap: 12rpx;
-	margin-bottom: 24rpx;
-}
-
-.selector-icon {
-	font-size: 32rpx;
-}
-
-.selector-title {
-	font-size: 30rpx;
-	font-weight: 600;
-	color: #191C1E;
-}
-
-.model-segmented {
-	display: flex;
-	background-color: #F5F7FA;
-	border-radius: 24rpx;
-	padding: 8rpx;
-	margin-bottom: 20rpx;
-}
-
-.model-option {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 20rpx 12rpx;
-	border-radius: 20rpx;
-	transition: all 0.2s ease;
-}
-
-.model-option.model-active {
-	background: linear-gradient(135deg, #C2185B 0%, #E91E63 100%);
-	box-shadow: 0 4rpx 16rpx rgba(194, 24, 91, 0.2);
-}
-
-.model-name {
-	font-size: 28rpx;
-	font-weight: 500;
-	color: #616161;
-	margin-bottom: 4rpx;
-	transition: color 0.2s ease;
-}
-
-.model-option.model-active .model-name {
-	color: #FFFFFF;
-	font-weight: 600;
-}
-
-.model-desc {
-	font-size: 22rpx;
-	color: #9E9E9E;
-	transition: color 0.2s ease;
-}
-
-.model-option.model-active .model-desc {
-	color: rgba(255, 255, 255, 0.9);
-}
-
-.selector-footer {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	background-color: #F5F7FA;
-	border-radius: 16rpx;
-	padding: 16rpx 20rpx;
-}
-
-.selected-model-text {
-	font-size: 26rpx;
-	color: #191C1E;
-	font-weight: 500;
-}
-
-.selected-model-desc {
-	font-size: 24rpx;
-	color: #C2185B;
 }
 
 /* Hero Upload Card */
@@ -880,56 +539,6 @@ const closeAiResult = () => {
 	color: #FFFFFF;
 }
 
-/* Quick Actions */
-.quick-actions {
-	display: flex;
-	justify-content: space-between;
-	gap: 16rpx;
-	margin-bottom: 32rpx;
-}
-
-.quick-action-item {
-	flex: 1;
-	background-color: #FFFFFF;
-	border-radius: 24rpx;
-	padding: 32rpx 16rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 12rpx;
-}
-
-.quick-icon-wrapper {
-	width: 80rpx;
-	height: 80rpx;
-	border-radius: 20rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.quick-icon-wrapper.camera {
-	background-color: #E3F2FD;
-}
-
-.quick-icon-wrapper.album {
-	background-color: #F3E5F5;
-}
-
-.quick-icon-wrapper.pdf {
-	background-color: #FFF3E0;
-}
-
-.quick-icon {
-	font-size: 36rpx;
-}
-
-.quick-label {
-	font-size: 24rpx;
-	color: #616161;
-	text-align: center;
-}
-
 /* List Header */
 .list-header {
 	display: flex;
@@ -960,6 +569,51 @@ const closeAiResult = () => {
 
 .filter-arrow {
 	font-size: 20rpx;
+	color: #9E9E9E;
+}
+
+/* Empty State */
+.empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 32rpx;
+	background-color: #FFFFFF;
+	border-radius: 32rpx;
+}
+
+.empty-icon {
+	font-size: 120rpx;
+	margin-bottom: 24rpx;
+	opacity: 0.5;
+}
+
+.empty-title {
+	font-size: 32rpx;
+	font-weight: 500;
+	color: #191C1E;
+	margin-bottom: 12rpx;
+}
+
+.empty-subtitle {
+	font-size: 26rpx;
+	color: #9E9E9E;
+	text-align: center;
+}
+
+/* Loading State */
+.loading-state {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 80rpx 32rpx;
+	background-color: #FFFFFF;
+	border-radius: 32rpx;
+}
+
+.loading-text {
+	font-size: 28rpx;
 	color: #9E9E9E;
 }
 
@@ -1533,5 +1187,11 @@ const closeAiResult = () => {
 	font-weight: 500;
 	padding: 24rpx;
 	border-radius: 48rpx;
+}
+.ai-result-footer {
+	padding: 24rpx 32rpx 48rpx; /* 固定留白：上24，左右32，下48 */
+	border-top: 1px solid rgba(0, 0, 0, 0.05);
+	background-color: #FFFFFF;
+	box-sizing: border-box;
 }
 </style>
