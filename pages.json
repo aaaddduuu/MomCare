@@ -25,9 +25,33 @@
 			}
 		},
 		{
+			"path": "pages/reports/detail",
+			"style": {
+				"navigationBarTitleText": "报告详情",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/reports/classify",
+			"style": {
+				"navigationBarTitleText": "报告分类",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/profile/index",
 			"style": {
 				"navigationBarTitleText": "我的",
+				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/profile/archives",
+			"style": {
+				"navigationBarTitleText": "产检档案",
 				"navigationBarBackgroundColor": "#F5F7FA",
 				"navigationBarTextStyle": "black"
 			}

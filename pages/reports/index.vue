@@ -316,18 +316,9 @@ const saveReportToDatabase = async (aiData, fileID, ocrText) => {
 	}
 }
 
-// View report detail - open AI popup with historical data
+// View report detail - navigate to full detail page
 const viewReportDetail = (report) => {
-	if (report.ai_result && report.ai_status === 'completed') {
-		aiReportResult.value = {
-			...report.ai_result,
-			llm_used: report.llm_used || DEFAULT_MODEL,
-			_id: report._id,
-			imageUrl: report.file_urls?.[0] || null
-		}
-	} else {
-		uni.showToast({ title: '该报告尚未解读', icon: 'none' })
-	}
+	uni.navigateTo({ url: `/pages/reports/detail?id=${report._id}` })
 }
 
 // Utilities
