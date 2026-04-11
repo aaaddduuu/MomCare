@@ -204,10 +204,10 @@ const navigateTo = (page) => {
 	console.log('Navigate to:', page)
 	const routes = {
 		articles: '/pages/profile/saved-articles',
-		reports: '/pages/reports/index',
+		reports: '/pages/archives/index',
 		records: '/pages/profile/health-records',
 		saved: '/pages/profile/saved',
-		archives: '/pages/profile/archives',
+		archives: '/pages/archives/index',
 		health: '/pages/profile/health-data',
 		reminder: '/pages/profile/reminder',
 		privacy: '/pages/profile/privacy',

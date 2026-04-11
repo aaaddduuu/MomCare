@@ -1,7 +1,40 @@
 <script>
 	export default {
+		globalData: {
+			statusBarHeight: 20,
+			navBarHeight: 44,
+			menuButtonRightPadding: 0
+		},
 		onLaunch: function() {
 			console.log('MomCare Launch')
+
+			try {
+				// 获取系统信息，计算状态栏高度
+				const systemInfo = uni.getSystemInfoSync()
+				const statusBarHeight = systemInfo.statusBarHeight || 20
+				let navBarHeight = 44
+				let menuButtonRightPadding = 0
+
+				// #ifdef MP-WEIXIN
+				try {
+					const menuButton = uni.getMenuButtonBoundingClientRect()
+					if (menuButton) {
+						// 导航栏内容高度 = 胶囊按钮高度 + (胶囊距状态栏顶部的间距 * 2)
+						navBarHeight = (menuButton.bottom - menuButton.top) + (menuButton.top - statusBarHeight) * 2
+						// 右侧 padding = 屏幕宽度 - 胶囊左侧距离 + 额外间距
+						menuButtonRightPadding = systemInfo.windowWidth - menuButton.left + 8
+					}
+				} catch (e) {
+					console.warn('getMenuButtonBoundingClientRect failed', e)
+				}
+				// #endif
+
+				this.globalData.statusBarHeight = statusBarHeight
+				this.globalData.navBarHeight = navBarHeight
+				this.globalData.menuButtonRightPadding = menuButtonRightPadding
+			} catch (e) {
+				console.error('App onLaunch error:', e)
+			}
 		},
 		onShow: function() {
 			console.log('MomCare Show')
@@ -45,6 +78,11 @@
 		--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
 		--shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
 		--shadow-lg: 0 8px 32px rgba(194, 24, 91, 0.08);
+
+		/* 小程序导航栏适配变量（兜底值，由 App.vue onLaunch 动态覆盖） */
+		--status-bar-height: 20px;
+		--nav-bar-height: 44px;
+		--menu-button-right-padding: 0px;
 	}
 
 	/* 重置样式 */

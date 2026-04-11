@@ -17,30 +17,6 @@
 			}
 		},
 		{
-			"path": "pages/reports/index",
-			"style": {
-				"navigationBarTitleText": "报告管家",
-				"navigationBarBackgroundColor": "#F5F7FA",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/reports/detail",
-			"style": {
-				"navigationBarTitleText": "报告详情",
-				"navigationBarBackgroundColor": "#F5F7FA",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/reports/classify",
-			"style": {
-				"navigationBarTitleText": "报告分类",
-				"navigationBarBackgroundColor": "#F5F7FA",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
 			"path": "pages/profile/index",
 			"style": {
 				"navigationBarTitleText": "我的",
@@ -49,11 +25,51 @@
 			}
 		},
 		{
-			"path": "pages/profile/archives",
+			"path": "pages/archives/index",
 			"style": {
-				"navigationBarTitleText": "产检档案",
-				"navigationBarBackgroundColor": "#F5F7FA",
-				"navigationBarTextStyle": "black"
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FAF9F8"
+			}
+		},
+		{
+			"path": "pages/archives/unarchived",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FAF9F8"
+			}
+		},
+		{
+			"path": "pages/archives/batch",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FAF9F8"
+			}
+		},
+		{
+			"path": "pages/archives/classify",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FAF9F8"
+			}
+		},
+		{
+			"path": "pages/archives/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FAF9F8"
+			}
+		},
+		{
+			"path": "pages/archives/ai-result",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FAF9F8"
 			}
 		}
 	],
@@ -82,8 +98,8 @@
 				"selectedIconPath": "static/tabbar/knowledge-active.png"
 			},
 			{
-				"pagePath": "pages/reports/index",
-				"text": "报告管家",
+				"pagePath": "pages/archives/index",
+				"text": "产检档案",
 				"iconPath": "static/tabbar/reports.png",
 				"selectedIconPath": "static/tabbar/reports-active.png"
 			},

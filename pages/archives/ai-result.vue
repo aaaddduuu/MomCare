@@ -1,0 +1,394 @@
+<template>
+  <view class="page">
+    <!-- NavBar -->
+    <NavBar title="AI 解读报告" theme="dark" />
+
+    <!-- AI Header Card -->
+    <view class="ai-header-card">
+      <view class="ai-header-meta">
+        <text class="ai-header-type">血常规 · 孕 32 周</text>
+        <text class="ai-header-date">2025/04/02</text>
+      </view>
+      <view class="ai-conclusion">
+        <text class="ai-conclusion-icon">⚠️</text>
+        <text class="ai-conclusion-text">整体基本正常，血红蛋白略低于参考值，建议适量增加富铁食物摄入，下次产检关注复查结果。</text>
+      </view>
+    </view>
+
+    <!-- Scrollable Content -->
+    <scroll-view scroll-y class="scroll">
+      <!-- Indicators Section -->
+      <view class="ai-section-title-wrap">
+        <text class="ai-section-title">逐项解读</text>
+      </view>
+      <view class="indicator-list">
+        <view
+          v-for="(ind, idx) in indicators"
+          :key="idx"
+          class="indicator-row"
+          :class="ind.rowClass"
+        >
+          <view class="indicator-status" :class="ind.status"></view>
+          <view class="indicator-body">
+            <view class="indicator-name-row">
+              <text class="indicator-name">{{ ind.name }}</text>
+              <text class="indicator-value" :class="ind.status">{{ ind.value }}</text>
+            </view>
+            <text class="indicator-ref">{{ ind.ref }}</text>
+            <text class="indicator-explain">{{ ind.explain }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Suggestions Section -->
+      <view class="ai-section-title-wrap">
+        <text class="ai-section-title">行动建议</text>
+      </view>
+      <view class="suggestion-list">
+        <view
+          v-for="(sug, idx) in suggestions"
+          :key="idx"
+          class="suggestion-card"
+        >
+          <text class="suggestion-icon">{{ sug.icon }}</text>
+          <text class="suggestion-text">{{ sug.text }}</text>
+        </view>
+      </view>
+
+      <!-- Disclaimer -->
+      <view class="disclaimer">
+        <text class="disclaimer-text">✦ 以上解读由 AI 生成，仅供参考，不构成医疗诊断建议。如有疑问，请及时就诊咨询您的产科医生。</text>
+      </view>
+
+      <!-- Feedback Row -->
+      <view class="ai-feedback-row">
+        <view class="feedback-btn" @tap="onFeedback('helpful')">
+          <text class="feedback-btn-text">👍 有帮助</text>
+        </view>
+        <view class="feedback-btn" @tap="onFeedback('issue')">
+          <text class="feedback-btn-text">✏️ 有问题</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import NavBar from '@/components/NavBar.vue'
+
+const indicators = ref([
+  {
+    name: '白细胞（WBC）',
+    value: '7.2 × 10⁹/L',
+    status: 'normal',
+    ref: '参考范围：4.0 – 10.0 × 10⁹/L',
+    explain: '数值正常。白细胞是免疫系统的重要组成部分，孕期略有升高属正常现象，您的结果在正常范围内。',
+    rowClass: ''
+  },
+  {
+    name: '血红蛋白（HGB）',
+    value: '98 g/L ↓',
+    status: 'abnormal',
+    ref: '参考范围：孕期 ≥ 110 g/L',
+    explain: '略低于正常。血红蛋白负责携带氧气，数值偏低提示轻度贫血。孕期贫血较常见，建议增加瘦肉、菠菜等富铁食物摄入。',
+    rowClass: 'indicator-row-abnormal'
+  },
+  {
+    name: '血小板（PLT）',
+    value: '215 × 10⁹/L',
+    status: 'normal',
+    ref: '参考范围：100 – 300 × 10⁹/L',
+    explain: '数值正常。血小板负责止血凝血，您的结果完全正常，无需担心。',
+    rowClass: ''
+  },
+  {
+    name: '红细胞压积（HCT）',
+    value: '31.5% ↓',
+    status: 'watch',
+    ref: '参考范围：孕期 ≥ 33%',
+    explain: '略偏低，与血红蛋白偏低相关，结合 HGB 一起关注即可，无需特别处理。',
+    rowClass: 'indicator-row-watch'
+  }
+])
+
+const suggestions = ref([
+  {
+    icon: '🥩',
+    text: '每天适量食用瘦红肉（牛肉/猪肝）、深色绿叶蔬菜，同时搭配维生素C丰富的食物促进铁吸收。'
+  },
+  {
+    icon: '📋',
+    text: '下次产检（孕 36 周左右）时，主动告知医生本次血红蛋白偏低情况，请医生评估是否需要口服补铁剂。'
+  },
+  {
+    icon: '🚫',
+    text: '茶、咖啡、钙片会影响铁的吸收，建议与含铁食物或补铁剂间隔 2 小时以上服用。'
+  }
+])
+
+function onFeedback(type) {
+  uni.showToast({ title: type === 'helpful' ? '感谢反馈！' : '感谢您的反馈', icon: 'none' })
+}
+</script>
+
+<style scoped lang="scss">
+page {
+  --rose: #E8637A;
+  --rose-light: #FDEEF1;
+  --rose-dark: #C0405A;
+  --amber: #F0A940;
+  --amber-light: #FEF4E3;
+  --green: #5BBF7C;
+  --green-light: #EAF7EF;
+  --gray-50: #FAF9F8;
+  --gray-100: #F2F0EE;
+  --gray-200: #E4E1DC;
+  --gray-300: #C8C4BC;
+  --gray-400: #9C9890;
+  --gray-500: #6E6A64;
+  --gray-700: #3A3834;
+  --gray-900: #1C1A17;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+  --shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #FAF9F8;
+  font-family: 'DM Sans', 'Noto Sans SC', sans-serif;
+}
+
+/* ── AI Header Card ── */
+.ai-header-card {
+  background: linear-gradient(135deg, #E8637A 0%, #C84070 100%);
+  padding: 40rpx 32rpx 44rpx;
+  flex-shrink: 0;
+}
+
+.ai-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.ai-header-type {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ai-header-date {
+  font-size: 22rpx;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4rpx 16rpx;
+  border-radius: 999px;
+}
+
+.ai-conclusion {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  margin-top: 24rpx;
+  display: flex;
+  gap: 20rpx;
+  align-items: flex-start;
+}
+
+.ai-conclusion-icon {
+  font-size: 40rpx;
+  flex-shrink: 0;
+}
+
+.ai-conclusion-text {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.6;
+}
+
+/* ── Scroll ── */
+.scroll {
+  flex: 1;
+  padding-bottom: 24rpx;
+}
+
+/* ── Section Title ── */
+.ai-section-title-wrap {
+  padding: 0 32rpx;
+  margin-top: 36rpx;
+}
+
+.ai-section-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #9C9890;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Indicators ── */
+.indicator-list {
+  padding: 20rpx 32rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.indicator-row {
+  background: white;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  display: flex;
+  gap: 24rpx;
+  align-items: flex-start;
+  box-shadow: 0 4rpx 32rpx rgba(0, 0, 0, 0.07);
+}
+
+.indicator-row-abnormal {
+  background: #FFF8F9;
+  border-left: 6rpx solid #E8637A;
+}
+
+.indicator-row-watch {
+  background: #FFFDF7;
+  border-left: 6rpx solid #F0A940;
+}
+
+.indicator-status {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 10rpx;
+}
+
+.indicator-status.normal {
+  background: #5BBF7C;
+}
+
+.indicator-status.abnormal {
+  background: #E8637A;
+}
+
+.indicator-status.watch {
+  background: #F0A940;
+}
+
+.indicator-body {
+  flex: 1;
+}
+
+.indicator-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+
+.indicator-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2A2826;
+}
+
+.indicator-value {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.indicator-value.normal {
+  color: #5BBF7C;
+}
+
+.indicator-value.abnormal {
+  color: #E8637A;
+}
+
+.indicator-value.watch {
+  color: #F0A940;
+}
+
+.indicator-ref {
+  font-size: 22rpx;
+  color: #9C9890;
+  margin-bottom: 8rpx;
+  display: block;
+}
+
+.indicator-explain {
+  font-size: 24rpx;
+  color: #6E6A64;
+  line-height: 1.6;
+}
+
+/* ── Suggestions ── */
+.suggestion-list {
+  padding: 20rpx 32rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.suggestion-card {
+  background: #EAF7EF;
+  border-radius: 20rpx;
+  padding: 24rpx 28rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.suggestion-icon {
+  font-size: 32rpx;
+  flex-shrink: 0;
+}
+
+.suggestion-text {
+  font-size: 26rpx;
+  color: #2A6040;
+  line-height: 1.6;
+}
+
+/* ── Disclaimer ── */
+.disclaimer {
+  margin: 24rpx 32rpx;
+  background: #F2F0EE;
+  border-radius: 20rpx;
+  padding: 20rpx 28rpx;
+}
+
+.disclaimer-text {
+  font-size: 22rpx;
+  color: #9C9890;
+  line-height: 1.6;
+}
+
+/* ── Feedback Row ── */
+.ai-feedback-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 0 32rpx 32rpx;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+}
+
+.feedback-btn {
+  flex: 1;
+  height: 76rpx;
+  background: white;
+  border: 2rpx solid #E4E1DC;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedback-btn-text {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #6E6A64;
+}
+</style>
