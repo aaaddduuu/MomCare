@@ -1,6 +1,11 @@
 <template>
-	<view class="page-container">
-		<!-- User Profile Header -->
+	<view class="page">
+		<!-- NavBar -->
+		<NavBar title="我的" :showBack="false" />
+
+		<!-- Scrollable Content -->
+		<scroll-view scroll-y class="scroll-content">
+			<!-- User Profile Header -->
 		<view class="profile-header">
 			<view class="avatar-wrapper">
 				<image class="avatar" src="/static/logo.png" mode="aspectFill"></image>
@@ -166,13 +171,15 @@
 			<text class="version-text">MomCare v1.0.0</text>
 		</view>
 
-		<!-- Bottom Spacer for TabBar -->
-		<view class="bottom-spacer"></view>
+			<!-- Bottom Spacer for TabBar -->
+			<view class="bottom-spacer"></view>
+		</scroll-view>
 	</view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import NavBar from '@/components/NavBar.vue'
 
 // User state
 const isVip = ref(false)
@@ -244,17 +251,27 @@ const handleLogout = () => {
 
 <style scoped lang="scss">
 /* Page Container */
-.page-container {
-	min-height: 100vh;
-	background-color: #F5F7FA;
-	padding: 0 32rpx 32rpx;
+.page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	background-color: #FAF9F8;
+	box-sizing: border-box;
+}
+
+/* Scrollable Content */
+.scroll-content {
+	flex: 1;
+	padding: 32rpx;
+	padding-bottom: 120rpx;
+	box-sizing: border-box;
 }
 
 /* Profile Header */
 .profile-header {
 	display: flex;
 	align-items: center;
-	padding: 48rpx 0 32rpx;
+	padding: 16rpx 0 32rpx;
 }
 
 .avatar-wrapper {

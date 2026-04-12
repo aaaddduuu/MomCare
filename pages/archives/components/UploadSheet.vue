@@ -5,7 +5,7 @@
       <view class="sheet-handle"></view>
       <text class="sheet-title">上传产检报告</text>
       <view class="upload-options">
-        <view class="upload-opt" @tap="onOptionTap('camera')">
+        <view class="upload-opt" @tap="onCamera">
           <view class="opt-icon camera">
             <text class="opt-icon-emoji">📷</text>
           </view>
@@ -15,7 +15,7 @@
           </view>
           <text class="opt-arrow">›</text>
         </view>
-        <view class="upload-opt" @tap="onOptionTap('gallery')">
+        <view class="upload-opt" @tap="onGallery">
           <view class="opt-icon gallery">
             <text class="opt-icon-emoji">🖼️</text>
           </view>
@@ -25,7 +25,7 @@
           </view>
           <text class="opt-arrow">›</text>
         </view>
-        <view class="upload-opt" @tap="onOptionTap('pdf')">
+        <view class="upload-opt" @tap="onPdf">
           <view class="opt-icon pdf">
             <text class="opt-icon-emoji">📄</text>
           </view>
@@ -42,6 +42,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue'
+import { useReportStore } from '@/stores/report'
 
 const props = defineProps({
   show: {
@@ -51,6 +52,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:show', 'select'])
+const reportStore = useReportStore()
 
 const animShow = ref(false)
 
@@ -73,16 +75,154 @@ function close() {
   }, 250)
 }
 
-function onOptionTap(type) {
-  emit('update:show', false)
-  animShow.value = false
-  if (type === 'camera') {
-    uni.navigateTo({ url: '/pages/archives/classify' })
-  } else if (type === 'gallery') {
-    uni.navigateTo({ url: '/pages/archives/batch' })
-  } else {
-    uni.navigateTo({ url: '/pages/archives/classify' })
+// 拍照上传
+async function onCamera() {
+  close()
+  try {
+    await uni.authorize({ scope: 'scope.camera' })
+    await doCamera()
+  } catch (e) {
+    // 权限被拒绝
+    showPermissionDialog('camera')
   }
+}
+
+async function doCamera() {
+  try {
+    const res = await new Promise((resolve, reject) => {
+      uni.chooseImage({
+        count: 9,
+        sourceType: ['camera'],
+        sizeType: ['compressed'],
+        success: resolve,
+        fail: reject
+      })
+    })
+    await handleUploadResult(res.tempFilePaths)
+  } catch (e) {
+    console.error('Camera error:', e)
+  }
+}
+
+// 相册选择
+async function onGallery() {
+  close()
+  try {
+    const res = await new Promise((resolve, reject) => {
+      uni.chooseImage({
+        count: 20,
+        sourceType: ['album'],
+        sizeType: ['compressed'],
+        success: resolve,
+        fail: reject
+      })
+    })
+    if (res.tempFilePaths.length > 20) {
+      uni.showToast({ title: '最多一次上传 20 张', icon: 'none' })
+      return
+    }
+    await handleUploadResult(res.tempFilePaths)
+  } catch (e) {
+    console.error('Gallery error:', e)
+    if (e && e.errMsg && e.errMsg.includes('deny')) {
+      showPermissionDialog('album')
+    }
+  }
+}
+
+// PDF 导入
+async function onPdf() {
+  close()
+  try {
+    const res = await new Promise((resolve, reject) => {
+      uni.chooseMessageFile({
+        count: 1,
+        type: 'file',
+        extension: ['.pdf'],
+        success: resolve,
+        fail: reject
+      })
+    })
+    const file = res.tempFiles[0]
+    if (file.size > 30 * 1024 * 1024) {
+      uni.showToast({ title: 'PDF 文件不能超过 30MB', icon: 'none' })
+      return
+    }
+    // 上传 PDF
+    uni.showLoading({ title: '上传中…' })
+    const fileUrl = await reportStore.uploadFile(file.path)
+    uni.hideLoading()
+    if (fileUrl) {
+      emit('select', {
+        fileUrls: [fileUrl],
+        fileType: 'pdf',
+        fileCount: 1
+      })
+    } else {
+      uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+    }
+  } catch (e) {
+    uni.hideLoading()
+    console.error('PDF error:', e)
+  }
+}
+
+// 处理图片上传结果
+async function handleUploadResult(tempFilePaths) {
+  if (!tempFilePaths || tempFilePaths.length === 0) return
+
+  uni.showLoading({ title: '上传中…' })
+  const uploadedUrls = []    // 云端 fileID
+  const localPaths = []      // 本地临时路径（用于预览）
+  let failedCount = 0
+
+  for (const filePath of tempFilePaths) {
+    const fileUrl = await reportStore.uploadFile(filePath)
+    if (fileUrl) {
+      uploadedUrls.push(fileUrl)
+      localPaths.push(filePath)
+    } else {
+      failedCount++
+    }
+  }
+
+  uni.hideLoading()
+
+  if (failedCount > 0 && uploadedUrls.length === 0) {
+    uni.showToast({ title: '上传失败，请检查网络', icon: 'none' })
+    return
+  }
+
+  if (failedCount > 0) {
+    uni.showToast({ title: `${failedCount} 张上传失败，已跳过`, icon: 'none' })
+  }
+
+  // 将上传数据存入 store，避免 URL 参数传递问题
+  const uploadData = {
+    fileUrls: uploadedUrls,
+    localPaths: localPaths,
+    fileType: 'image',
+    fileCount: uploadedUrls.length
+  }
+  reportStore.pendingUpload = uploadData
+
+  emit('select', uploadData)
+}
+
+// 权限拒绝引导
+function showPermissionDialog(type) {
+  const typeName = type === 'camera' ? '相机' : '相册'
+  uni.showModal({
+    title: '需要权限',
+    content: `需要${typeName}权限才能上传报告，是否前往设置开启？`,
+    confirmText: '去设置',
+    cancelText: '暂不',
+    success: (res) => {
+      if (res.confirm) {
+        uni.openSetting()
+      }
+    }
+  })
 }
 </script>
 
@@ -160,21 +300,11 @@ function onOptionTap(type) {
   font-size: 36rpx;
 }
 
-.opt-icon.camera {
-  background: #FDEEF1;
-}
+.opt-icon.camera { background: #FDEEF1; }
+.opt-icon.gallery { background: #EBF3FE; }
+.opt-icon.pdf { background: #FEF4E3; }
 
-.opt-icon.gallery {
-  background: #EBF3FE;
-}
-
-.opt-icon.pdf {
-  background: #FEF4E3;
-}
-
-.opt-text {
-  flex: 1;
-}
+.opt-text { flex: 1; }
 
 .opt-label {
   font-size: 28rpx;

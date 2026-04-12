@@ -4,6 +4,11 @@ unpackage/
 .DS_Store
 openspec/
 
+# IDE/Tool configs
+.claude/
+.opencode/
+.trae/
+
 # Environment variables - NEVER commit real API keys
 .env
 **/.env

@@ -1,6 +1,11 @@
 <template>
-	<view class="page-container">
-		<!-- Greeting Header -->
+	<view class="page">
+		<!-- NavBar -->
+		<NavBar title="孕期记录" :showBack="false" />
+
+		<!-- Scrollable Content -->
+		<scroll-view scroll-y class="scroll-content">
+			<!-- Greeting Header -->
 		<view class="greeting-section">
 			<text class="greeting-text">早安，准妈妈</text>
 			<text class="greeting-subtitle">在这段生命奇迹的旅程中，被温柔呵护着</text>
@@ -172,13 +177,15 @@
 			</view>
 		</view>
 
-		<!-- Bottom Spacer for TabBar -->
-		<view class="bottom-spacer"></view>
+			<!-- Bottom Spacer for TabBar -->
+			<view class="bottom-spacer"></view>
+		</scroll-view>
 	</view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import NavBar from '@/components/NavBar.vue'
 
 // Mock data for 23 weeks 3 days pregnant
 const daysLeft = ref(116)
@@ -225,16 +232,26 @@ const completedCheckup = ref({
 </script>
 
 <style scoped lang="scss">
-/* Page Container - Light Grey Background */
-.page-container {
-	min-height: 100vh;
-	background-color: #F5F7FA;
-	padding: 0 32rpx 32rpx;
+/* Page Container */
+.page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	background-color: #FAF9F8;
+	box-sizing: border-box;
+}
+
+/* Scrollable Content */
+.scroll-content {
+	flex: 1;
+	padding: 32rpx;
+	padding-bottom: 120rpx;
+	box-sizing: border-box;
 }
 
 /* Greeting Section */
 .greeting-section {
-	padding: 48rpx 0 32rpx;
+	padding: 16rpx 0 32rpx;
 }
 
 .greeting-text {

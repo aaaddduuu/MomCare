@@ -1,48 +1,47 @@
 <template>
-	<view class="page-container">
-		<!-- Page Header -->
-		<view class="page-header">
-			<text class="page-title">知识中心</text>
-			<text class="page-subtitle">权威专家为您解答孕期疑惑</text>
-		</view>
+	<view class="page">
+		<!-- NavBar -->
+		<NavBar title="知识中心" :showBack="false" />
 
-		<!-- Sticky Search Bar -->
-		<view class="search-bar-wrapper">
-			<view class="search-bar">
+		<!-- Search & Filter Row -->
+		<view class="search-row">
+			<view class="search-box-wrap">
 				<text class="search-icon">🔍</text>
 				<input
-					class="search-input"
+					class="search-box"
 					type="text"
 					placeholder="搜索孕期知识、症状、检查..."
 					placeholder-class="search-placeholder"
 					:value="searchKeyword"
 					@input="onSearchInput"
 				/>
-				<view class="search-btn" @tap="handleSearch">
-					<text class="search-btn-text">搜索</text>
-				</view>
+				<text v-if="searchKeyword" class="search-clear" @tap="clearSearch">✕</text>
+			</view>
+			<view class="filter-btn" @tap="handleFilter">
+				<text class="filter-text">筛选 ▾</text>
 			</view>
 		</view>
 
 		<!-- Category Tabs - Horizontal Scroll -->
-		<view class="category-tabs-wrapper">
-			<scroll-view class="category-tabs" scroll-x :scroll-left="scrollLeft" scroll-with-animation>
-				<view class="tabs-container">
+		<view class="tabs-wrap">
+			<scroll-view scroll-x class="tabs-scroll" :show-scrollbar="false">
+				<view class="tabs">
 					<view
 						v-for="(tab, index) in categoryTabs"
 						:key="tab.id"
-						class="category-tab"
+						class="tab"
 						:class="{ active: activeTab === tab.id }"
 						@tap="switchTab(tab.id)"
 					>
-						<text class="tab-text">{{ tab.name }}</text>
-						<view v-if="activeTab === tab.id" class="tab-indicator"></view>
+						<text class="tab-label" :class="{ 'tab-label-active': activeTab === tab.id }">{{ tab.name }}</text>
 					</view>
 				</view>
 			</scroll-view>
 		</view>
 
-		<!-- Week Recommendation Banner -->
+		<!-- Scrollable Content -->
+		<scroll-view scroll-y class="scroll-content">
+			<!-- Week Recommendation Banner -->
 		<view class="week-banner">
 			<view class="week-badge">
 				<text class="week-icon">📅</text>
@@ -245,16 +244,19 @@
 			</scroll-view>
 		</view>
 
-		<!-- Bottom Spacer for TabBar -->
-		<view class="bottom-spacer"></view>
+			<!-- Bottom Spacer for TabBar -->
+			<view class="bottom-spacer"></view>
+		</scroll-view>
 	</view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import NavBar from '@/components/NavBar.vue'
 
 // Search state
 const searchKeyword = ref('')
+const showFilterSheet = ref(false)
 
 // Category tabs
 const categoryTabs = ref([
@@ -372,6 +374,17 @@ const handleSearch = () => {
 	})
 }
 
+const handleFilter = () => {
+	uni.showToast({
+		title: '筛选功能开发中',
+		icon: 'none'
+	})
+}
+
+const clearSearch = () => {
+	searchKeyword.value = ''
+}
+
 // Tab switch
 const switchTab = (tabId) => {
 	activeTab.value = tabId
@@ -398,125 +411,138 @@ const watchVideo = (video) => {
 </script>
 
 <style scoped lang="scss">
+/* ── CSS Variables ── */
+page {
+	--rose: #E8637A;
+	--rose-light: #FDEEF1;
+	--rose-mid: #F5B8C4;
+	--rose-dark: #C0405A;
+	--gray-50: #FAF9F8;
+	--gray-100: #F2F0EE;
+	--gray-200: #E4E1DC;
+	--gray-300: #C8C4BC;
+	--gray-400: #9C9890;
+	--gray-500: #6E6A64;
+	--gray-700: #3A3834;
+	--gray-900: #1C1A17;
+}
+
 /* Page Container */
-.page-container {
-	min-height: 100vh;
-	background-color: #F5F7FA;
-	padding: 0 32rpx 32rpx;
+.page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	background-color: #FFFFFF;
+	box-sizing: border-box;
 }
 
-/* Page Header */
-.page-header {
-	padding: 48rpx 0 32rpx;
+/* ── Search Row ── */
+.search-row {
+	background: white;
+	display: flex;
+	padding: 20rpx 32rpx;
+	gap: 16rpx;
+	flex-shrink: 0;
 }
 
-.page-title {
-	display: block;
-	font-size: 48rpx;
-	font-weight: 600;
-	color: #191C1E;
-	line-height: 1.3;
-	margin-bottom: 12rpx;
-}
-
-.page-subtitle {
-	display: block;
-	font-size: 28rpx;
-	color: #757575;
-	line-height: 1.5;
-}
-
-/* Sticky Search Bar */
-.search-bar-wrapper {
-	position: sticky;
-	top: 0;
-	z-index: 100;
-	background-color: #F5F7FA;
-	padding: 16rpx 0;
-}
-
-.search-bar {
+.search-box-wrap {
+	flex: 1;
+	height: 72rpx;
+	background: #F2F0EE;
+	border-radius: 999px;
 	display: flex;
 	align-items: center;
-	background-color: #FFFFFF;
-	border-radius: 48rpx;
-	padding: 16rpx 24rpx;
-	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+	padding: 0 28rpx;
+	gap: 12rpx;
 }
 
 .search-icon {
-	font-size: 32rpx;
-	margin-right: 16rpx;
+	font-size: 24rpx;
+	flex-shrink: 0;
 }
 
-.search-input {
+.search-box {
 	flex: 1;
-	font-size: 28rpx;
-	color: #191C1E;
+	height: 72rpx;
+	font-size: 26rpx;
+	color: #3A3834;
+	background: transparent;
 }
 
 .search-placeholder {
-	color: #9E9E9E;
+	color: #C8C4BC;
+	font-size: 26rpx;
 }
 
-.search-btn {
-	background: linear-gradient(135deg, #C2185B 0%, #E91E63 100%);
-	padding: 12rpx 24rpx;
-	border-radius: 32rpx;
-	margin-left: 16rpx;
+.search-clear {
+	font-size: 24rpx;
+	color: #9C9890;
+	padding: 8rpx;
 }
 
-.search-btn-text {
+/* ── Filter Button ── */
+.filter-btn {
+	height: 72rpx;
+	padding: 0 24rpx;
+	background: #F2F0EE;
+	border-radius: 999px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.filter-text {
+	font-size: 24rpx;
+	font-weight: 500;
+	color: #6E6A64;
+}
+
+/* ── Tabs ── */
+.tabs-wrap {
+	background: white;
+	border-bottom: 1px solid #F2F0EE;
+	flex-shrink: 0;
+}
+
+.tabs-scroll {
+	white-space: nowrap;
+}
+
+.tabs {
+	display: inline-flex;
+	padding: 0 32rpx;
+}
+
+.tab {
+	display: inline-flex;
+	align-items: center;
+	padding: 20rpx 28rpx;
+	gap: 10rpx;
+	border-bottom: 4rpx solid transparent;
+}
+
+.tab.active {
+	border-bottom-color: #E8637A;
+}
+
+.tab-label {
 	font-size: 26rpx;
 	font-weight: 500;
-	color: #FFFFFF;
-}
-
-/* Category Tabs */
-.category-tabs-wrapper {
-	background-color: #F5F7FA;
-	padding: 16rpx 0;
-	position: sticky;
-	top: 88rpx;
-	z-index: 99;
-}
-
-.category-tabs {
+	color: #9C9890;
 	white-space: nowrap;
 }
 
-.tabs-container {
-	display: inline-flex;
-	padding: 0 8rpx;
+.tab-label-active {
+	color: #E8637A;
 }
 
-.category-tab {
-	position: relative;
-	padding: 16rpx 24rpx;
-	margin: 0 8rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-}
-
-.tab-text {
-	font-size: 28rpx;
-	color: #757575;
-	white-space: nowrap;
-}
-
-.category-tab.active .tab-text {
-	color: #C2185B;
-	font-weight: 500;
-}
-
-.tab-indicator {
-	position: absolute;
-	bottom: 0;
-	width: 24rpx;
-	height: 6rpx;
-	background-color: #C2185B;
-	border-radius: 6rpx;
+/* Scrollable Content Area */
+.scroll-content {
+	flex: 1;
+	padding: 32rpx;
+	padding-bottom: 180rpx;
+	padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
+	box-sizing: border-box;
 }
 
 /* Week Recommendation Banner */

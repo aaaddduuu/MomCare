@@ -110,6 +110,7 @@ function handleBack() {
   font-size: 32rpx;
   color: #3A3834;
   line-height: 1;
+  transform: translateY(-1rpx);
 }
 
 .nav-back-icon-dark {

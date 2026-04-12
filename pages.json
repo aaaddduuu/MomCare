@@ -3,24 +3,21 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "孕期记录",
-				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationStyle": "custom",
 				"navigationBarTextStyle": "black"
 			}
 		},
 		{
 			"path": "pages/knowledge/index",
 			"style": {
-				"navigationBarTitleText": "知识中心",
-				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationStyle": "custom",
 				"navigationBarTextStyle": "black"
 			}
 		},
 		{
 			"path": "pages/profile/index",
 			"style": {
-				"navigationBarTitleText": "我的",
-				"navigationBarBackgroundColor": "#F5F7FA",
+				"navigationStyle": "custom",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -87,27 +84,27 @@
 		"list": [
 			{
 				"pagePath": "pages/index/index",
-				"text": "孕期记录",
+				"text": "首页",
 				"iconPath": "static/tabbar/home.png",
-				"selectedIconPath": "static/tabbar/home-active.png"
+				"selectedIconPath": "static/tabbar/home.png"
 			},
 			{
 				"pagePath": "pages/knowledge/index",
-				"text": "知识中心",
+				"text": "知识",
 				"iconPath": "static/tabbar/knowledge.png",
-				"selectedIconPath": "static/tabbar/knowledge-active.png"
+				"selectedIconPath": "static/tabbar/knowledge.png"
 			},
 			{
 				"pagePath": "pages/archives/index",
-				"text": "产检档案",
-				"iconPath": "static/tabbar/reports.png",
-				"selectedIconPath": "static/tabbar/reports-active.png"
+				"text": "档案",
+				"iconPath": "static/tabbar/archives.png",
+				"selectedIconPath": "static/tabbar/archives.png"
 			},
 			{
 				"pagePath": "pages/profile/index",
 				"text": "我的",
 				"iconPath": "static/tabbar/profile.png",
-				"selectedIconPath": "static/tabbar/profile-active.png"
+				"selectedIconPath": "static/tabbar/profile.png"
 			}
 		]
 	},

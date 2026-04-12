@@ -25,6 +25,11 @@
       
       "report_date": { "bsonType": "string", "description": "检查日期" },
       "week_of_pregnancy": { "description": "孕周，可能是数字或字符串" },
-      "notes": { "bsonType": "string", "description": "用户备注" }
+      "notes": { "bsonType": "string", "description": "用户备注" },
+      "archive_status": { "bsonType": "string", "description": "归档状态：unarchived/archived", "defaultValue": "unarchived" },
+      "hospital": { "bsonType": "string", "description": "就诊医院" },
+      "ocr_confidence": { "bsonType": "number", "description": "OCR 置信度" },
+      "ai_type_guess": { "bsonType": "string", "description": "AI 猜测的报告类型" },
+      "ai_type_confidence": { "bsonType": "number", "description": "AI 类型识别置信度" }
     }
 }
