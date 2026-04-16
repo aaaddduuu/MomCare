@@ -3,12 +3,7 @@
 		<!-- Hero -->
 		<view class="hero-rose">
 			<view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-			<view class="nav-bar">
-				<view class="nav-back" @tap="goBack">
-					<text class="nav-back-icon">‹</text>
-				</view>
-				<text class="nav-title">产检提醒</text>
-			</view>
+			<NavBar title="产检提醒" :showBack="true" />
 			<view class="hero-content">
 				<text class="hero-label">下次产检日期</text>
 				<text class="hero-date">4月20日</text>
@@ -79,6 +74,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import NavBar from '@/components/NavBar.vue'
 
 const statusBarHeight = ref(20)
 
@@ -88,10 +84,6 @@ onMounted(() => {
 		statusBarHeight.value = app.globalData.statusBarHeight || 20
 	}
 })
-
-function goBack() {
-	uni.navigateBack()
-}
 
 const examItems = reactive([
 	{ text: '常规产检（宫高、腹围、胎心）', required: true, done: true },
@@ -125,35 +117,6 @@ const notifItems = reactive([
 }
 
 .status-bar-spacer { width: 100%; }
-
-.nav-bar {
-	display: flex;
-	align-items: center;
-	gap: 20rpx;
-	padding: 16rpx 0 20rpx;
-}
-
-.nav-back {
-	width: 64rpx;
-	height: 64rpx;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.2);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.nav-back-icon {
-	font-size: 32rpx;
-	color: #FFFFFF;
-}
-
-.nav-title {
-	font-size: 32rpx;
-	font-weight: 600;
-	color: #FFFFFF;
-	flex: 1;
-}
 
 .hero-content {
 	position: relative;

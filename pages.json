@@ -132,6 +132,14 @@
 				"navigationBarTextStyle": "black",
 				"backgroundColor": "#FBF7F2"
 			}
+		},
+		{
+			"path": "pages/profile/about",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
 		}
 	],
 	"globalStyle": {

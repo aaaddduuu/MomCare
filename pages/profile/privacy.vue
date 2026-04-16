@@ -3,12 +3,7 @@
 		<!-- Hero -->
 		<view class="hero-gray">
 			<view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-			<view class="nav-bar">
-				<view class="nav-back" @tap="goBack">
-					<text class="nav-back-icon">‹</text>
-				</view>
-				<text class="nav-title">隐私与数据</text>
-			</view>
+			<NavBar title="隐私与数据" :showBack="true" />
 			<view class="hero-content">
 				<text class="hero-label">数据存储</text>
 				<text class="hero-val">128<text class="hero-unit">MB</text></text>
@@ -64,6 +59,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import NavBar from '@/components/NavBar.vue'
 
 const statusBarHeight = ref(20)
 
@@ -73,10 +69,6 @@ onMounted(() => {
 		statusBarHeight.value = app.globalData.statusBarHeight || 20
 	}
 })
-
-function goBack() {
-	uni.navigateBack()
-}
 
 const dataItems = [
 	{ icon: '⚖️', iconBg: '#FAEAEE', title: '体重记录', count: '42 条记录 · 约 12KB', type: 'weight', exportLabel: '导出 CSV' },
@@ -130,35 +122,6 @@ function handleAction(item) {
 }
 
 .status-bar-spacer { width: 100%; }
-
-.nav-bar {
-	display: flex;
-	align-items: center;
-	gap: 20rpx;
-	padding: 16rpx 0 20rpx;
-}
-
-.nav-back {
-	width: 64rpx;
-	height: 64rpx;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.2);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.nav-back-icon {
-	font-size: 32rpx;
-	color: #FFFFFF;
-}
-
-.nav-title {
-	font-size: 32rpx;
-	font-weight: 600;
-	color: #FFFFFF;
-	flex: 1;
-}
 
 .hero-content { position: relative; z-index: 1; }
 
