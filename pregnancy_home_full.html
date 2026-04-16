@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>孕途伴侣</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --cream:#FBF7F2;--cream2:#F5EFE6;--cream3:#EDE3D6;
+  --border:#E8DDD0;
+  --rose:#D4627A;--rose-lt:#FAEAEE;--rose-mid:#E8A0B0;--rose-dk:#B04560;--blush:#F2D5DC;
+  --early-bg:#FFF0F3;--early-bg2:#FDD8E3;--early-text:#C04868;--early-week:#E8A0B0;
+  --mid-bg:#FEF6E8;--mid-bg2:#FDE8C0;--mid-text:#B07020;--mid-week:#F0C070;
+  --late-bg:#EEE8FA;--late-bg2:#DDD0F5;--late-text:#6A4AAA;--late-week:#B8A0E0;
+  --sage:#7BA08C;--sage-lt:#EAF2EE;--sage-dk:#3A6A54;
+  --amber:#C98A3A;--amber-lt:#FDF3E3;
+  --sky:#5B8FC9;--sky-lt:#EBF2FB;
+  --green:#5BBF7C;--green-lt:#EAF7EF;
+  --gray50:#FAFAF8;--gray100:#F2F0EE;--gray200:#E4E1DC;--gray300:#C8C4BC;
+  --gray400:#9C9890;--gray600:#4A4844;--gray900:#1C1A17;
+  --ff-s:'Noto Serif SC',serif;
+  --ff-n:'Noto Sans SC',sans-serif;
+  --r:16px;--r-sm:10px;--rp:999px;
+  --sh:0 2px 14px rgba(60,30,10,.07);
+  --sh-lg:0 6px 28px rgba(60,30,10,.12);
+}
+body{font-family:var(--ff-n);background:#D8D0C5;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px 12px 36px;gap:28px;flex-wrap:wrap;}
+.phone{width:390px;border-radius:46px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 24px 64px rgba(0,0,0,.2);background:var(--cream);position:relative;flex-shrink:0;}
+.phone-lbl{text-align:center;font-size:11px;font-weight:500;color:#7A6A5A;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+.screen{display:none;flex-direction:column;height:844px;overflow:hidden;position:relative;}
+.screen.active{display:flex;}
+
+/* ── Status bar ── */
+.sbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:600;flex-shrink:0;position:relative;z-index:2;}
+.sbar.light{color:white;background:transparent;}
+.sbar.dark{color:var(--gray900);background:white;}
+.sbar-ic{display:flex;gap:5px;align-items:center;}
+
+/* ── Main scroll ── */
+.ms{flex:1;overflow-y:auto;overflow-x:hidden;}
+.ms::-webkit-scrollbar{width:0;}
+
+/* ══════════════════════
+   HERO
+══════════════════════ */
+.hero{
+  background:linear-gradient(158deg,#C45070 0%,#E07898 36%,#F0A8BA 66%,#F8DDE8 100%);
+  padding:0 20px 20px;flex-shrink:0;position:relative;overflow:hidden;
+}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 78% 8%,rgba(255,255,255,.18) 0%,transparent 55%);}
+.hero-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;position:relative;}
+.hero-greet{font-size:13px;color:rgba(255,255,255,.85);}
+.hero-av{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;}
+.hero-row{display:flex;align-items:flex-end;justify-content:space-between;position:relative;}
+.week-blk{flex:1;}
+.wk-lbl{font-size:11px;color:rgba(255,255,255,.7);letter-spacing:.1em;margin-bottom:1px;}
+.wk-big{font-family:var(--ff-s);font-size:60px;font-weight:700;color:white;line-height:1;letter-spacing:-2px;}
+.wk-big span{font-size:26px;font-weight:400;opacity:.85;}
+.wk-days{font-size:14px;color:rgba(255,255,255,.8);margin-top:1px;}
+.due-block{text-align:right;}
+.due-badge{display:inline-flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:7px 14px;cursor:pointer;}
+.due-num{font-family:var(--ff-s);font-size:28px;font-weight:700;color:white;line-height:1;}
+.due-unit{font-size:10px;color:rgba(255,255,255,.65);letter-spacing:.05em;}
+.due-lbl{font-size:11px;color:rgba(255,255,255,.75);margin-top:2px;}
+.fruit-row{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:var(--rp);padding:5px 12px;margin-top:8px;position:relative;}
+.fruit-row span{font-size:12px;color:rgba(255,255,255,.9);}
+.fruit-row strong{color:white;}
+
+/* ══════════════════════
+   SECTION COMMON
+══════════════════════ */
+.sec{margin:10px 12px 0;}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sec-title{font-family:var(--ff-s);font-size:15px;font-weight:600;color:var(--gray900);}
+.sec-more{font-size:12px;color:var(--rose);cursor:pointer;}
+.card{background:white;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+
+/* ══════════════════════
+   DAILY CHANGES CARD
+══════════════════════ */
+.daily-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;border-bottom:1px solid var(--border);}
+.d-nav-btn{width:28px;height:28px;border-radius:50%;background:var(--gray100);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--gray600);transition:background .15s;flex-shrink:0;}
+.d-nav-btn:hover{background:var(--gray200);}
+.d-nav-center{text-align:center;flex:1;}
+.d-nav-main{font-size:13px;font-weight:600;color:var(--gray900);}
+.d-nav-sub{font-size:10px;color:var(--gray400);margin-top:1px;}
+.today-chip{font-size:9px;font-weight:700;background:var(--rose);color:white;padding:1px 6px;border-radius:var(--rp);margin-left:5px;vertical-align:middle;}
+.back-day-btn{font-size:10px;font-weight:600;color:var(--rose);background:var(--rose-lt);border:none;border-radius:var(--rp);padding:3px 8px;cursor:pointer;font-family:var(--ff-n);transition:all .15s;}
+.back-day-btn.hidden{opacity:0;pointer-events:none;}
+
+/* Slides */
+.slides-outer{overflow:hidden;}
+.slides-track{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1);}
+.slide{min-width:100%;padding:12px 12px 4px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ditem{background:var(--cream);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;transition:transform .15s;border:1px solid var(--cream3);}
+.ditem:hover{transform:translateY(-1px);}
+.ditem.baby{border-left:3px solid var(--rose);}
+.ditem.mom{border-left:3px solid var(--sage);}
+.ditem.tip{grid-column:1/-1;border-left:3px solid var(--amber);}
+.di-icon{font-size:20px;margin-bottom:4px;}
+.di-lbl{font-size:9px;font-weight:700;color:var(--gray400);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+.di-text{font-size:12px;color:var(--gray900);line-height:1.5;}
+/* dots */
+.slide-dots{display:flex;justify-content:center;gap:5px;padding:8px 0 10px;}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--gray300);transition:all .2s;}
+.sdot.active{width:16px;border-radius:3px;background:var(--rose);}
+
+/* ══════════════════════
+   GUIDE CARD
+══════════════════════ */
+.guide-card{
+  margin:10px 12px 0;
+  background:linear-gradient(135deg,#FAF3F6 0%,#FEF9F0 100%);
+  border-radius:var(--r);border:1px solid var(--border);
+  padding:14px;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:var(--sh);
+}
+.guide-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.guide-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.guide-badge{
+  background:var(--rose);color:white;
+  font-family:var(--ff-s);font-size:16px;font-weight:700;
+  width:44px;height:44px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;flex-shrink:0;
+}
+.guide-badge span{font-size:9px;font-weight:400;opacity:.85;}
+.guide-info-title{font-size:14px;font-weight:600;color:var(--gray900);}
+.guide-info-sub{font-size:11px;color:var(--gray400);margin-top:2px;}
+.guide-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.gtag{font-size:10px;padding:3px 9px;border-radius:var(--rp);display:flex;align-items:center;gap:3px;}
+.gtag.baby{background:var(--rose-lt);color:var(--rose-dk);}
+.gtag.mom{background:var(--sage-lt);color:var(--sage-dk);}
+.gtag.food{background:var(--amber-lt);color:#8A5818;}
+.guide-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--cream3);}
+.guide-read{font-size:12px;color:var(--rose);font-weight:500;}
+
+/* ══════════════════════
+   CALENDAR CARD
+══════════════════════ */
+.cal-card{background:white;margin:10px 12px 0;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.month-nav{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 7px;border-bottom:1px solid var(--border);}
+.m-arrow{width:27px;height:27px;border-radius:50%;background:var(--gray100);border:none;cursor:pointer;font-size:15px;color:var(--gray600);display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.m-arrow:hover{background:var(--gray200);}
+.m-arrow:disabled{opacity:.25;cursor:not-allowed;}
+.m-center{text-align:center;flex:1;}
+.m-title{font-family:var(--ff-s);font-size:14px;font-weight:600;color:var(--gray900);}
+.m-sub{font-size:9px;color:var(--gray400);margin-top:1px;}
+.bt-today{font-size:10px;font-weight:600;color:var(--rose);background:var(--rose-lt);border:none;border-radius:var(--rp);padding:3px 9px;cursor:pointer;font-family:var(--ff-n);white-space:nowrap;transition:all .15s;}
+.bt-today.hidden{opacity:0;pointer-events:none;}
+.wday-row{display:grid;grid-template-columns:repeat(7,1fr);padding:5px 7px 2px;}
+.wdl{text-align:center;font-size:9px;font-weight:600;color:var(--gray400);}
+.wdl:first-child{color:#D06060;}
+.wdl:last-child{color:#6080C8;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:2px 7px 7px;}
+.dc{border-radius:7px;display:flex;flex-direction:column;align-items:center;cursor:pointer;padding:2px 1px 2px;min-height:44px;position:relative;transition:transform .1s;overflow:visible;}
+.dc:hover:not(.empty){transform:scale(1.05);}
+.dc.empty{pointer-events:none;}
+.dc.pre,.dc.post{background:transparent;}
+.dc.ed{background:var(--early-bg);}
+.dc.md{background:var(--mid-bg);}
+.dc.ld{background:var(--late-bg);}
+.dc.cw.ed{background:var(--early-bg2);}
+.dc.cw.md{background:var(--mid-bg2);}
+.dc.cw.ld{background:var(--late-bg2);}
+.dc.tc::after{content:'';position:absolute;inset:1px;border-radius:6px;border:2px solid var(--rose);box-shadow:0 0 0 2px rgba(212,98,122,.12);pointer-events:none;z-index:1;}
+.dc.sc::before{content:'';position:absolute;inset:1px;border-radius:6px;background:rgba(212,98,122,.1);pointer-events:none;z-index:0;}
+.dc.sc.tc::before{display:none;}
+.dc.sun .dn{color:#D05050!important;}
+.dc.sat .dn{color:#5070C8!important;}
+.dn{font-size:13px;font-weight:600;line-height:1;margin-top:2px;color:var(--gray900);position:relative;z-index:1;}
+.dc.pre .dn,.dc.post .dn{color:var(--gray300);}
+.dc.tc .dn{color:var(--rose);font-weight:700;}
+.dc.ed .dn{color:var(--early-text);}
+.dc.md .dn{color:var(--mid-text);}
+.dc.ld .dn{color:var(--late-text);}
+.pd{font-size:7.5px;margin-top:1px;opacity:.7;line-height:1;text-align:center;position:relative;z-index:1;}
+.dc.ed .pd{color:var(--early-text);}
+.dc.md .pd{color:var(--mid-text);}
+.dc.ld .pd{color:var(--late-text);}
+.wb{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:7px;font-weight:700;padding:1px 4px;border-radius:var(--rp);white-space:nowrap;z-index:4;box-shadow:0 1px 3px rgba(0,0,0,.1);pointer-events:none;}
+.wb.we{background:var(--early-bg2);color:var(--early-text);border:1px solid var(--early-week);}
+.wb.wm{background:var(--mid-bg2);color:var(--mid-text);border:1px solid var(--mid-week);}
+.wb.wl{background:var(--late-bg2);color:var(--late-text);border:1px solid var(--late-week);}
+.due-mk{position:absolute;top:-5px;right:-3px;font-size:10px;z-index:5;pointer-events:none;}
+.rdot{width:4px;height:4px;border-radius:50%;background:var(--rose);position:absolute;bottom:2px;left:50%;transform:translateX(-50%);opacity:.8;z-index:2;}
+.leg-strip{display:flex;align-items:center;gap:8px;padding:5px 12px 8px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--gray600);}
+.lsw{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
+.ls-e{background:var(--early-bg2);border:1px solid var(--early-week);}
+.ls-m{background:var(--mid-bg2);border:1px solid var(--mid-week);}
+.ls-l{background:var(--late-bg2);border:1px solid var(--late-week);}
+.ls-t{background:white;border:2px solid var(--rose);}
+.lwb{font-size:7px;font-weight:700;background:var(--late-bg2);color:var(--late-text);padding:1px 4px;border-radius:var(--rp);border:1px solid var(--late-week);}
+
+/* ══════════════════════
+   DAY RECORD PANEL
+══════════════════════ */
+.day-panel{background:white;margin:8px 12px 0;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.dp-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border);}
+.dp-date-txt{font-family:var(--ff-s);font-size:14px;font-weight:600;color:var(--gray900);}
+.today-badge{display:inline-flex;align-items:center;background:var(--rose);color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--rp);margin-left:6px;vertical-align:middle;}
+.dp-week{font-size:10px;color:var(--gray400);margin-top:2px;}
+.dpc{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--rp);}
+.dpc-e{background:var(--early-bg2);color:var(--early-text);}
+.dpc-m{background:var(--mid-bg2);color:var(--mid-text);}
+.dpc-l{background:var(--late-bg2);color:var(--late-text);}
+.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:8px 10px;}
+.ri{background:var(--cream);border-radius:var(--r-sm);border:1.5px solid var(--border);padding:9px 11px;cursor:pointer;transition:all .15s;position:relative;}
+.ri:hover{border-color:var(--rose-mid);background:var(--rose-lt);}
+.ri.hd{border-color:var(--rose-mid);}
+.ri.full{grid-column:1/-1;}
+.ri-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.ri-ic{font-size:16px;}
+.ri-ed{font-size:10px;color:var(--rose);opacity:0;transition:opacity .15s;}
+.ri:hover .ri-ed{opacity:1;}
+.ri-lbl{font-size:9px;font-weight:700;color:var(--gray400);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;}
+.ri-val{font-size:15px;font-weight:700;color:var(--gray900);}
+.ri-val.em{font-size:12px;font-weight:400;color:var(--gray300);}
+.ri-unit{font-size:10px;font-weight:400;color:var(--gray400);margin-left:2px;}
+.ri-note{font-size:12px;color:var(--gray600);line-height:1.6;margin-top:2px;}
+.ri-note.em{color:var(--gray300);font-size:11px;}
+
+/* ══════════════════════
+   BOTTOM NAV
+══════════════════════ */
+.bnav{background:rgba(251,247,242,.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;padding:8px 0 18px;flex-shrink:0;}
+.btab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;}
+.bt-icon{font-size:20px;line-height:1;}
+.bt-lbl{font-size:10px;font-weight:500;color:var(--gray400);}
+.btab.active .bt-lbl{color:var(--rose);}
+
+/* ══════════════════════
+   EDIT OVERLAY
+══════════════════════ */
+.eov{position:absolute;inset:0;background:rgba(28,26,23,.45);z-index:50;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s;}
+.eov.show{opacity:1;pointer-events:all;}
+.esheet{background:white;border-radius:24px 24px 0 0;margin-top:auto;padding:0 20px 36px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:75%;overflow-y:auto;}
+.esheet::-webkit-scrollbar{display:none;}
+.eov.show .esheet{transform:translateY(0);}
+.eh{width:36px;height:4px;background:var(--gray200);border-radius:2px;margin:14px auto 14px;}
+.etitle{font-family:var(--ff-s);font-size:16px;font-weight:600;color:var(--gray900);margin-bottom:2px;}
+.eDateLbl{font-size:11px;color:var(--gray400);margin-bottom:16px;}
+.fl{font-size:10px;font-weight:700;color:var(--gray400);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.fg{margin-bottom:16px;}
+.nr{display:flex;align-items:center;gap:9px;}
+.nb{width:42px;height:42px;border-radius:50%;background:var(--gray100);border:none;cursor:pointer;font-size:20px;color:var(--gray600);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nb:hover{background:var(--gray200);}
+.ninp{flex:1;height:46px;background:var(--gray100);border:2px solid var(--border);border-radius:var(--r-sm);font-size:20px;font-family:var(--ff-s);font-weight:700;color:var(--gray900);text-align:center;outline:none;transition:border-color .15s;}
+.ninp:focus{border-color:var(--rose);}
+.nu{font-size:13px;color:var(--gray400);flex-shrink:0;}
+.bpr{display:flex;align-items:center;gap:7px;}
+.bpi{flex:1;height:44px;background:var(--gray100);border:2px solid var(--border);border-radius:var(--r-sm);font-size:18px;font-family:var(--ff-s);font-weight:700;color:var(--gray900);text-align:center;outline:none;transition:border-color .15s;}
+.bpi:focus{border-color:var(--rose);}
+.bps{font-size:18px;font-weight:700;color:var(--gray400);}
+.bpu{font-size:11px;color:var(--gray400);}
+.mr{display:flex;gap:7px;justify-content:space-between;}
+.mb{flex:1;height:44px;border-radius:var(--r-sm);border:2px solid var(--border);background:var(--gray100);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.mb.active{border-color:var(--rose);background:var(--rose-lt);}
+.sw{display:flex;flex-wrap:wrap;gap:6px;}
+.sc{padding:5px 10px;border-radius:var(--rp);font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--gray100);color:var(--gray600);transition:all .15s;}
+.sc.active{background:var(--rose-lt);border-color:var(--rose-mid);color:var(--rose-dk);}
+.nta{width:100%;min-height:76px;resize:none;background:var(--gray100);border:2px solid var(--border);border-radius:var(--r-sm);padding:11px;font-size:13px;font-family:var(--ff-n);color:var(--gray900);outline:none;transition:border-color .15s;line-height:1.7;}
+.nta:focus{border-color:var(--rose);}
+.pw{display:flex;flex-direction:column;gap:7px;}
+.pi{display:flex;align-items:center;gap:9px;cursor:pointer;}
+.pck{width:19px;height:19px;border-radius:5px;border:2px solid var(--border);background:var(--gray100);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:11px;}
+.pi.done .pck{background:var(--rose);border-color:var(--rose);color:white;}
+.pi.done .ptx{text-decoration:line-through;color:var(--gray400);}
+.ptx{font-size:13px;color:var(--gray600);}
+.sbtn{width:100%;height:48px;margin-top:8px;background:linear-gradient(135deg,var(--rose),var(--rose-dk));border:none;border-radius:var(--rp);font-size:15px;font-weight:600;color:white;cursor:pointer;font-family:var(--ff-n);box-shadow:0 4px 16px rgba(212,98,122,.3);transition:opacity .15s;}
+.sbtn:hover{opacity:.9;}
+
+/* ══════════════════════
+   PERSONAL CENTER
+══════════════════════ */
+.pc-hero{
+  background:linear-gradient(155deg,#C45070 0%,#E07898 40%,#F4C0CC 100%);
+  padding:0 20px 24px;flex-shrink:0;position:relative;overflow:hidden;
+}
+.pc-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 10%,rgba(255,255,255,.18) 0%,transparent 55%);}
+.pc-avatar-wrap{display:flex;align-items:flex-end;gap:14px;position:relative;padding-top:8px;}
+.pc-avatar{width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.3);border:3px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:34px;flex-shrink:0;}
+.pc-name-block{flex:1;}
+.pc-name{font-family:var(--ff-s);font-size:20px;font-weight:700;color:white;margin-bottom:3px;}
+.pc-preg-tag{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:var(--rp);padding:4px 10px;font-size:11px;color:rgba(255,255,255,.9);}
+.pc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;position:relative;}
+.pc-stat{background:rgba(255,255,255,.18);border-radius:12px;padding:10px 8px;text-align:center;}
+.pc-stat-val{font-family:var(--ff-s);font-size:20px;font-weight:700;color:white;line-height:1;}
+.pc-stat-lbl{font-size:9px;color:rgba(255,255,255,.75);margin-top:3px;line-height:1.3;}
+/* Progress in hero */
+.pc-prog-wrap{margin-top:14px;position:relative;}
+.pc-prog-lbl{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.75);margin-bottom:5px;}
+.pc-prog-track{height:8px;background:rgba(255,255,255,.2);border-radius:4px;overflow:hidden;}
+.pc-prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,rgba(255,255,255,.5),rgba(255,255,255,.9));position:relative;}
+.pc-prog-thumb{position:absolute;right:-1px;top:-3px;width:14px;height:14px;border-radius:50%;background:white;box-shadow:0 1px 6px rgba(0,0,0,.2);}
+
+/* Section cards */
+.pcs{margin:10px 12px 0;}
+.pcs-title{font-size:11px;font-weight:700;color:var(--gray400);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
+.pc-card{background:white;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;margin-bottom:10px;}
+.pc-row{
+  display:flex;align-items:center;padding:12px 14px;cursor:pointer;
+  border-bottom:1px solid var(--border);transition:background .15s;
+}
+.pc-row:last-child{border-bottom:none;}
+.pc-row:hover{background:var(--gray50);}
+.pc-row-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;margin-right:12px;}
+.pc-row-body{flex:1;}
+.pc-row-title{font-size:14px;font-weight:500;color:var(--gray900);}
+.pc-row-sub{font-size:11px;color:var(--gray400);margin-top:1px;}
+.pc-row-right{display:flex;align-items:center;gap:6px;}
+.pc-row-badge{font-size:10px;font-weight:600;background:var(--rose-lt);color:var(--rose-dk);padding:2px 7px;border-radius:var(--rp);}
+.pc-row-arrow{font-size:14px;color:var(--gray300);}
+/* Due countdown ring in personal center */
+.due-ring-wrap{display:flex;align-items:center;gap:14px;padding:14px 16px;}
+.due-ring{position:relative;width:64px;height:64px;flex-shrink:0;}
+.due-ring svg{transform:rotate(-90deg);}
+.due-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.due-ring-num{font-family:var(--ff-s);font-size:18px;font-weight:700;color:var(--rose);line-height:1;}
+.due-ring-unit{font-size:8px;color:var(--gray400);}
+.due-ring-text{flex:1;}
+.due-ring-title{font-size:14px;font-weight:600;color:var(--gray900);margin-bottom:3px;}
+.due-ring-sub{font-size:12px;color:var(--gray400);line-height:1.5;}
+/* settings toggle */
+.tog{width:36px;height:20px;border-radius:10px;background:var(--gray200);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
+.tog.on{background:var(--rose);}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.tog.on::after{transform:translateX(16px);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.card,.guide-card,.cal-card,.day-panel{animation:fadeUp .3s ease both;}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════
+     PHONE 1 — 首页
+════════════════════════════════ -->
+<div>
+<div class="phone-lbl">① 首页</div>
+<div class="phone">
+<div class="screen active" id="s-home">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="sbar light">
+      <span>9:41</span>
+      <div class="sbar-ic"><span style="font-size:11px">●●●</span><span style="font-size:11px;margin:0 3px">WiFi</span><span>🔋</span></div>
+    </div>
+    <div class="hero-top">
+      <div class="hero-greet">早上好，宝妈 👋</div>
+      <div class="hero-av" onclick="gotoPC()">🌸</div>
+    </div>
+    <div class="hero-row">
+      <div class="week-blk">
+        <div class="wk-lbl">今天是孕</div>
+        <div class="wk-big">32<span>周</span></div>
+        <div class="wk-days">+ 3 天</div>
+      </div>
+      <div class="due-block">
+        <div class="due-badge">
+          <div class="due-num">54</div>
+          <div class="due-unit">DAYS</div>
+          <div class="due-lbl">距预产期</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="fruit-row">
+        <span>🥬</span><span>宝宝现在像一颗 <strong>大白菜</strong> 那么大</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main scrollable -->
+  <div class="ms" id="home-scroll">
+
+    <!-- ① Daily changes -->
+    <div class="sec">
+      <div class="card">
+        <div class="daily-nav">
+          <button class="d-nav-btn" onclick="slideDay(-1)">‹</button>
+          <div class="d-nav-center">
+            <div class="d-nav-main" id="d-date-lbl">孕 32 周 3 天<span class="today-chip">今天</span></div>
+            <div class="d-nav-sub" id="d-date-sub">2025年4月13日</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button class="back-day-btn hidden" id="back-day-btn" onclick="goDayToday()">回今天</button>
+            <button class="d-nav-btn" onclick="slideDay(1)">›</button>
+          </div>
+        </div>
+        <div class="slides-outer">
+          <div class="slides-track" id="slides-track" style="transform:translateX(-200%)">
+            <!-- day -2 -->
+            <div class="slide">
+              <div class="ditem baby"><div class="di-icon">👶</div><div class="di-lbl">宝宝</div><div class="di-text">手指甲已完全形成，会自己抓握</div></div>
+              <div class="ditem mom"><div class="di-icon">💆</div><div class="di-lbl">妈妈</div><div class="di-text">腰背酸痛加重，建议用孕妇枕</div></div>
+              <div class="ditem tip"><div class="di-icon">💡</div><div class="di-lbl">今日提醒</div><div class="di-text">保持左侧卧，有助于改善胎儿血液供应，减轻腰背不适</div></div>
+            </div>
+            <!-- day -1 -->
+            <div class="slide">
+              <div class="ditem baby"><div class="di-icon">🫁</div><div class="di-lbl">宝宝</div><div class="di-text">肺部继续发育，已能进行呼吸练习</div></div>
+              <div class="ditem mom"><div class="di-icon">🦵</div><div class="di-lbl">妈妈</div><div class="di-text">腿部抽筋常见，睡前补充钙和镁</div></div>
+              <div class="ditem tip"><div class="di-icon">💡</div><div class="di-lbl">今日提醒</div><div class="di-text">脚踝水肿若明显加重，应及时告知产科医生</div></div>
+            </div>
+            <!-- today -->
+            <div class="slide">
+              <div class="ditem baby"><div class="di-icon">👶</div><div class="di-lbl">宝宝</div><div class="di-text">约 1.8kg，头部开始朝下入盆</div></div>
+              <div class="ditem mom"><div class="di-icon">💆</div><div class="di-lbl">妈妈</div><div class="di-text">子宫扩大，气短与胃部不适明显</div></div>
+              <div class="ditem tip"><div class="di-icon">💡</div><div class="di-lbl">今日提醒</div><div class="di-text">少量多餐，每天记录胎动，12小时少于10次请就医</div></div>
+            </div>
+            <!-- day +1 -->
+            <div class="slide">
+              <div class="ditem baby"><div class="di-icon">🧠</div><div class="di-lbl">宝宝</div><div class="di-text">皮下脂肪积累，皮肤越来越圆润</div></div>
+              <div class="ditem mom"><div class="di-icon">🤱</div><div class="di-lbl">妈妈</div><div class="di-text">乳房准备哺乳，初乳开始分泌</div></div>
+              <div class="ditem tip"><div class="di-icon">💡</div><div class="di-lbl">今日提醒</div><div class="di-text">开始准备待产包清单，还有约55天哦，提前列好清单</div></div>
+            </div>
+            <!-- day +2 -->
+            <div class="slide">
+              <div class="ditem baby"><div class="di-icon">✨</div><div class="di-lbl">宝宝</div><div class="di-text">大脑褶皱加深，神经系统快速完善</div></div>
+              <div class="ditem mom"><div class="di-icon">💤</div><div class="di-lbl">妈妈</div><div class="di-text">胎动越来越明显，感受宝宝翻滚</div></div>
+              <div class="ditem tip"><div class="di-icon">💡</div><div class="di-lbl">今日提醒</div><div class="di-text">每天数胎动3次，每次1小时，形成规律记录习惯</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-dots">
+          <div class="sdot" id="sd0"></div><div class="sdot" id="sd1"></div>
+          <div class="sdot active" id="sd2"></div>
+          <div class="sdot" id="sd3"></div><div class="sdot" id="sd4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② Weekly guide -->
+    <div class="guide-card" onclick="">
+      <div class="guide-hd">
+        <div class="guide-badge">32<span>周</span></div>
+        <div>
+          <div class="guide-info-title">孕 32 周 · 孕晚期里程碑</div>
+          <div class="guide-info-sub">宝宝约 1.8kg · 还有约 56 天</div>
+        </div>
+      </div>
+      <div class="guide-tags">
+        <span class="gtag baby">👶 头朝下准备入盆</span>
+        <span class="gtag mom">💆 气短与胃部不适</span>
+        <span class="gtag food">🥗 增加铁质摄入</span>
+        <span class="gtag baby">🫁 肺部发育关键期</span>
+      </div>
+      <div class="guide-footer">
+        <span class="guide-read">阅读本周完整孕期指南 ›</span>
+      </div>
+    </div>
+
+    <!-- ③ Calendar -->
+    <div class="cal-card">
+      <div class="month-nav">
+        <button class="m-arrow" id="prev-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="m-center">
+          <div class="m-title" id="m-title">2025年4月</div>
+          <div class="m-sub" id="m-sub">孕晚期 · 第 32–35 周</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <button class="bt-today hidden" id="bt-today" onclick="jumpToday()">回今天</button>
+          <button class="m-arrow" id="next-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="wday-row">
+        <div class="wdl">日</div><div class="wdl">一</div><div class="wdl">二</div>
+        <div class="wdl">三</div><div class="wdl">四</div><div class="wdl">五</div><div class="wdl">六</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="leg-strip">
+        <div class="li"><div class="lsw ls-e"></div>早期</div>
+        <div class="li"><div class="lsw ls-m"></div>中期</div>
+        <div class="li"><div class="lsw ls-l"></div>晚期</div>
+        <div class="li"><div class="lsw ls-t"></div>今天</div>
+        <div class="li"><span style="font-size:10px">🎀</span>预产期</div>
+        <div class="li"><span class="lwb">W32</span>新周</div>
+      </div>
+    </div>
+
+    <!-- ④ Day record panel -->
+    <div class="day-panel" id="day-panel">
+      <div class="dp-hd">
+        <div>
+          <div>
+            <span class="dp-date-txt" id="dp-date">4月13日（今天）</span>
+            <span class="today-badge" id="dp-today-badge">今天</span>
+          </div>
+          <div class="dp-week" id="dp-week">孕 32 周 3 天 · 孕晚期</div>
+        </div>
+        <span class="dpc dpc-l" id="dp-chip">孕晚期</span>
+      </div>
+      <div class="rec-grid">
+        <div class="ri hd" onclick="openEdit('weight')">
+          <div class="ri-top"><div class="ri-ic">⚖️</div><div class="ri-ed">编辑</div></div>
+          <div class="ri-lbl">体重</div>
+          <div class="ri-val" id="ri-weight">62.5<span class="ri-unit">kg</span></div>
+        </div>
+        <div class="ri" onclick="openEdit('bp')">
+          <div class="ri-top"><div class="ri-ic">💗</div><div class="ri-ed">编辑</div></div>
+          <div class="ri-lbl">血压</div>
+          <div class="ri-val em" id="ri-bp">未记录</div>
+        </div>
+        <div class="ri hd" onclick="openEdit('daily')">
+          <div class="ri-top"><div class="ri-ic">😊</div><div class="ri-ed">编辑</div></div>
+          <div class="ri-lbl">心情</div>
+          <div class="ri-val" id="ri-mood" style="font-size:20px;">🙂</div>
+        </div>
+        <div class="ri" onclick="openEdit('fetal')">
+          <div class="ri-top"><div class="ri-ic">👣</div><div class="ri-ed">编辑</div></div>
+          <div class="ri-lbl">胎动</div>
+          <div class="ri-val em" id="ri-fetal">未记录</div>
+        </div>
+        <div class="ri full" onclick="openEdit('note')">
+          <div class="ri-top"><div class="ri-ic">📝</div><div class="ri-ed">编辑备注</div></div>
+          <div class="ri-lbl">备注 / 计划</div>
+          <div class="ri-note" id="ri-note">今天感觉宝宝动得很频繁，下午要去做产检记得带上所有报告。</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:16px;"></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bnav">
+    <div class="btab active"><div class="bt-icon">🌸</div><div class="bt-lbl" style="color:var(--rose)">首页</div></div>
+    <div class="btab"><div class="bt-icon">📁</div><div class="bt-lbl">档案</div></div>
+    <div class="btab"><div class="bt-icon">📖</div><div class="bt-lbl">知识</div></div>
+    <div class="btab" onclick="gotoPC()"><div class="bt-icon">👤</div><div class="bt-lbl">我的</div></div>
+  </div>
+
+  <!-- Edit overlay -->
+  <div class="eov" id="edit-ov" onclick="closeEdit(event)">
+    <div class="esheet" id="esheet" onclick="event.stopPropagation()">
+      <div class="eh"></div>
+      <div class="etitle" id="etitle">记录体重</div>
+      <div class="eDateLbl" id="edatel"></div>
+      <div id="ebody"></div>
+      <button class="sbtn" onclick="saveEdit()">保存记录</button>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ════════════════════════════════
+     PHONE 2 — 个人中心
+════════════════════════════════ -->
+<div>
+<div class="phone-lbl">② 个人中心</div>
+<div class="phone">
+<div class="screen active" id="s-pc">
+
+  <!-- Hero -->
+  <div class="pc-hero">
+    <div class="sbar light">
+      <span>9:41</span>
+      <div class="sbar-ic"><span style="font-size:11px">●●●</span><span style="font-size:11px;margin:0 3px">WiFi</span><span>🔋</span></div>
+    </div>
+    <div class="pc-avatar-wrap">
+      <div class="pc-avatar">🌸</div>
+      <div class="pc-name-block">
+        <div class="pc-name">小柚子的妈妈</div>
+        <div class="pc-preg-tag">🤰 孕 32 周 3 天 &nbsp;·&nbsp; 孕晚期</div>
+      </div>
+    </div>
+    <div class="pc-stats">
+      <div class="pc-stat">
+        <div class="pc-stat-val">54</div>
+        <div class="pc-stat-lbl">距预产期（天）</div>
+      </div>
+      <div class="pc-stat">
+        <div class="pc-stat-val">226</div>
+        <div class="pc-stat-lbl">已孕天数</div>
+      </div>
+      <div class="pc-stat">
+        <div class="pc-stat-val">11</div>
+        <div class="pc-stat-lbl">产检次数</div>
+      </div>
+    </div>
+    <div class="pc-prog-wrap">
+      <div class="pc-prog-lbl"><span>孕早期 W1</span><span>孕中期 W13</span><span>孕晚期 W28</span><span>W40</span></div>
+      <div class="pc-prog-track">
+        <div class="pc-prog-fill" style="width:80.4%"><div class="pc-prog-thumb"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable -->
+  <div class="ms">
+
+    <!-- Due countdown card -->
+    <div class="pcs">
+      <div class="pc-card">
+        <div class="due-ring-wrap">
+          <div class="due-ring">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#F2F0EE" stroke-width="5"/>
+              <circle cx="32" cy="32" r="26" fill="none" stroke="#D4627A" stroke-width="5"
+                stroke-dasharray="163.4" stroke-dashoffset="31.9" stroke-linecap="round"/>
+            </svg>
+            <div class="due-ring-inner">
+              <div class="due-ring-num">54</div>
+              <div class="due-ring-unit">天</div>
+            </div>
+          </div>
+          <div class="due-ring-text">
+            <div class="due-ring-title">距预产期还有 54 天</div>
+            <div class="due-ring-sub">预计 2025年6月5日<br>已完成孕期旅程的 80.4%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 孕期信息 -->
+    <div class="pcs">
+      <div class="pcs-title">孕期信息</div>
+      <div class="pc-card">
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--rose-lt);">📅</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">末次月经</div>
+            <div class="pc-row-sub">2024年8月29日</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--amber-lt);">🎀</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">预产期</div>
+            <div class="pc-row-sub">2025年6月5日（可由医生修正）</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--late-bg2);">🏥</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">就诊医院</div>
+            <div class="pc-row-sub">北京协和医院</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--green-lt);">👶</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">宝宝昵称</div>
+            <div class="pc-row-sub">小柚子</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 我的记录 -->
+    <div class="pcs">
+      <div class="pcs-title">我的记录</div>
+      <div class="pc-card">
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--rose-lt);">⚖️</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">体重记录</div>
+            <div class="pc-row-sub">最新 62.5kg · 孕期增重 +8.5kg</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-badge">42条</div><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--sky-lt);">💗</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">血压记录</div>
+            <div class="pc-row-sub">最新 118/76 · 血压正常</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-badge">28条</div><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--sage-lt);">👣</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">胎动记录</div>
+            <div class="pc-row-sub">今日 0次 · 昨日 18次</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-badge">56条</div><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--amber-lt);">📁</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">产检档案</div>
+            <div class="pc-row-sub">共 11 份报告 · 3份 AI 解读中</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-badge">11份</div><div class="pc-row-arrow">›</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 待办 & 提醒 -->
+    <div class="pcs">
+      <div class="pcs-title">待办 & 提醒</div>
+      <div class="pc-card">
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--rose-lt);">🗓</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">下次产检</div>
+            <div class="pc-row-sub">4月20日 · 还有 7 天</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-badge" style="background:var(--amber-lt);color:var(--amber);">7天后</div><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--late-bg);">🎒</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">待产包清单</div>
+            <div class="pc-row-sub">已完成 12 / 28 项</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--green-lt);">📋</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">今日计划</div>
+            <div class="pc-row-sub">产检 · 练习呼吸法 · 整理报告</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="pcs">
+      <div class="pcs-title">设置</div>
+      <div class="pc-card">
+        <div class="pc-row" style="cursor:default;">
+          <div class="pc-row-icon" style="background:var(--sky-lt);">🔔</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">每日推送提醒</div>
+            <div class="pc-row-sub">每天早8点推送孕期变化</div>
+          </div>
+          <div class="pc-row-right"><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="pc-row" style="cursor:default;">
+          <div class="pc-row-icon" style="background:var(--sage-lt);">💊</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">产检提醒</div>
+            <div class="pc-row-sub">产检前1天提前提醒</div>
+          </div>
+          <div class="pc-row-right"><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="pc-row" style="cursor:default;">
+          <div class="pc-row-icon" style="background:var(--rose-lt);">👣</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">胎动记录提醒</div>
+            <div class="pc-row-sub">9:00 / 14:00 / 21:00 提醒</div>
+          </div>
+          <div class="pc-row-right"><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--gray100);">🔒</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">隐私与数据</div>
+            <div class="pc-row-sub">数据导出 · 账号注销</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+        <div class="pc-row">
+          <div class="pc-row-icon" style="background:var(--gray100);">ℹ️</div>
+          <div class="pc-row-body">
+            <div class="pc-row-title">关于孕途伴侣</div>
+            <div class="pc-row-sub">版本 v1.0.0</div>
+          </div>
+          <div class="pc-row-right"><div class="pc-row-arrow">›</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:16px;"></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bnav">
+    <div class="btab" onclick="gotoHome()"><div class="bt-icon">🌸</div><div class="bt-lbl">首页</div></div>
+    <div class="btab"><div class="bt-icon">📁</div><div class="bt-lbl">档案</div></div>
+    <div class="btab"><div class="bt-icon">📖</div><div class="bt-lbl">知识</div></div>
+    <div class="btab active"><div class="bt-icon">👤</div><div class="bt-lbl" style="color:var(--rose)">我的</div></div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script>
+// ── Core data ───────────────────────────────────────────────
+const LMP   = new Date(2024,7,29);
+const DUE   = new Date(2025,5,5);
+const TODAY = new Date(2025,3,13);
+
+const ALL_MONTHS = [
+  {y:2024,m:7},{y:2024,m:8},{y:2024,m:9},{y:2024,m:10},{y:2024,m:11},
+  {y:2025,m:0},{y:2025,m:1},{y:2025,m:2},{y:2025,m:3},{y:2025,m:4},{y:2025,m:5}
+];
+const MN=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+const records={
+  '2025-3-13':{weight:'62.5',bp:'',mood:'🙂',fetal:'',note:'今天感觉宝宝动得很频繁，下午要去做产检记得带上所有报告。',plans:[]},
+  '2025-3-10':{weight:'62.2',bp:'110/72',mood:'😄',fetal:'15',note:'',plans:[]},
+  '2025-3-8': {weight:'62.0',bp:'108/70',mood:'😐',fetal:'12',note:'有点腰疼',plans:[]},
+};
+function rk(d){return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;}
+function getRec(d){return records[rk(d)]||null;}
+function setRec(d,v){records[rk(d)]=v;}
+function hasRec(d){const r=getRec(d);return r&&(r.weight||r.bp||r.mood||r.fetal||r.note);}
+
+function pregDay(d){const a=new Date(d.getFullYear(),d.getMonth(),d.getDate()),b=new Date(LMP.getFullYear(),LMP.getMonth(),LMP.getDate());return Math.floor((a-b)/86400000);}
+function wi(d){const n=pregDay(d);if(n<0)return null;return{week:Math.floor(n/7)+1,day:n%7,total:n};}
+function tri(w){return w<=12?'early':w<=27?'mid':'late';}
+function triN(t){return t==='early'?'孕早期':t==='mid'?'孕中期':'孕晚期';}
+function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+function isToday(d){return sameDay(d,TODAY);}
+function isDue(d){return sameDay(d,DUE);}
+function isCW(d){const a=wi(d),b=wi(TODAY);return a&&b&&a.week===b.week;}
+
+// ── Page nav ─────────────────────────────────────────────────
+function gotoPC(){document.getElementById('s-home').classList.remove('active');document.getElementById('s-pc').classList.add('active');}
+function gotoHome(){document.getElementById('s-pc').classList.remove('active');document.getElementById('s-home').classList.add('active');}
+
+// ── Daily slides ─────────────────────────────────────────────
+let curDay=0;
+const DLBLS=['孕 32 周 1 天','孕 32 周 2 天','孕 32 周 3 天','孕 32 周 4 天','孕 32 周 5 天'];
+const DDATE=['4月11日','4月12日','4月13日','4月14日','4月15日'];
+function slideDay(dir){curDay=Math.max(-2,Math.min(2,curDay+dir));updateDayUI();}
+function goDayToday(){curDay=0;updateDayUI();}
+function updateDayUI(){
+  const idx=curDay+2;
+  document.getElementById('slides-track').style.transform=`translateX(-${idx*100}%)`;
+  document.getElementById('d-date-lbl').innerHTML=DLBLS[idx]+(curDay===0?'<span class="today-chip">今天</span>':'');
+  document.getElementById('d-date-sub').textContent='2025年'+DDATE[idx];
+  for(let i=0;i<5;i++){const d=document.getElementById('sd'+i);if(d)d.classList.toggle('active',i===idx);}
+  document.getElementById('back-day-btn').classList.toggle('hidden',curDay===0);
+}
+
+// ── Calendar ─────────────────────────────────────────────────
+let curMI=ALL_MONTHS.findIndex(m=>m.y===2025&&m.m===3);
+let selDate=new Date(TODAY);
+
+function renderCal(){
+  const {y,m}=ALL_MONTHS[curMI];
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  const firstDow=new Date(y,m,1).getDay();
+  const dim=new Date(y,m+1,0).getDate();
+  document.getElementById('m-title').textContent=`${y}年${MN[m]}`;
+  const wi1=wi(new Date(y,m,1)),wi2=wi(new Date(y,m,dim));
+  if(wi1&&wi2){
+    const tm=tri(wi(new Date(y,m,15))?.week||1);
+    document.getElementById('m-sub').textContent=`${triN(tm)} · 第 ${wi1.week}–${wi2.week} 周`;
+  }
+  document.getElementById('bt-today').classList.toggle('hidden',y===TODAY.getFullYear()&&m===TODAY.getMonth());
+  for(let i=0;i<firstDow;i++){const e=document.createElement('div');e.className='dc empty';grid.appendChild(e);}
+  for(let d=1;d<=dim;d++){
+    const date=new Date(y,m,d);
+    const w=wi(date);
+    const cell=document.createElement('div');
+    cell.className='dc';
+    const dow=date.getDay();
+    if(dow===0)cell.classList.add('sun');
+    if(dow===6)cell.classList.add('sat');
+    if(!w){cell.classList.add(pregDay(date)<0?'pre':'post');}
+    else{cell.classList.add(tri(w.week)+'d'.replace('early-d','ed').replace('mid-d','md').replace('late-d','ld'));
+      // rewrite
+      const t=tri(w.week);
+      cell.classList.remove(t+'d');
+      cell.classList.add(t==='early'?'ed':t==='mid'?'md':'ld');
+      if(isCW(date))cell.classList.add('cw');
+    }
+    if(isToday(date))cell.classList.add('tc');
+    if(sameDay(date,selDate))cell.classList.add('sc');
+    const dn=document.createElement('div');dn.className='dn';dn.textContent=d;cell.appendChild(dn);
+    if(w){const pd=document.createElement('div');pd.className='pd';pd.textContent=isToday(date)?'今天':`${w.week}W${w.day}D`;cell.appendChild(pd);}
+    if(w&&w.day===0){const wb=document.createElement('div');const t=tri(w.week);wb.className=`wb w${t[0]}`;wb.textContent=`第${w.week}周`;cell.appendChild(wb);}
+    if(isDue(date)){const dm=document.createElement('div');dm.className='due-mk';dm.textContent='🎀';cell.appendChild(dm);}
+    if(hasRec(date)){const rd=document.createElement('div');rd.className='rdot';cell.appendChild(rd);}
+    cell.onclick=()=>selectDay(date);
+    grid.appendChild(cell);
+  }
+  document.getElementById('prev-btn').disabled=curMI<=0;
+  document.getElementById('next-btn').disabled=curMI>=ALL_MONTHS.length-1;
+}
+
+function selectDay(date){
+  selDate=new Date(date);
+  renderCal();
+  renderPanel();
+  // scroll to panel
+  setTimeout(()=>document.getElementById('day-panel').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function renderPanel(){
+  const w=wi(selDate);
+  const rec=getRec(selDate)||{};
+  const ms=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const ds=`${selDate.getMonth()+1}月${selDate.getDate()}日`;
+  document.getElementById('dp-date').textContent=isToday(selDate)?`${ds}（今天）`:ds;
+  document.getElementById('dp-today-badge').style.display=isToday(selDate)?'':'none';
+  if(w){
+    const t=tri(w.week);
+    document.getElementById('dp-week').textContent=`孕 ${w.week} 周 ${w.day} 天 · ${triN(t)}`;
+    const chip=document.getElementById('dp-chip');chip.textContent=triN(t);chip.className=`dpc dpc-${t[0]}`;
+  }
+  // weight
+  const wt=rec.weight;
+  document.getElementById('ri-weight').innerHTML=wt?`${wt}<span class="ri-unit">kg</span>`:'<span style="font-size:12px;font-weight:400;color:var(--gray300)">未记录</span>';
+  document.querySelector('[onclick="openEdit(\'weight\')"]').className=`ri ${wt?'hd':''}`;
+  // bp
+  const bp=rec.bp;
+  document.getElementById('ri-bp').innerHTML=bp?`<span style="font-size:13px;font-weight:700">${bp}</span><span class="ri-unit">mmHg</span>`:'<span style="font-size:12px;font-weight:400;color:var(--gray300)">未记录</span>';
+  document.querySelector('[onclick="openEdit(\'bp\')"]').className=`ri ${bp?'hd':''}`;
+  // mood
+  const mood=rec.mood;
+  document.getElementById('ri-mood').textContent=mood||'';
+  document.getElementById('ri-mood').className=mood?'ri-val':'ri-val em';
+  if(!mood)document.getElementById('ri-mood').textContent='未记录';
+  document.querySelector('[onclick="openEdit(\'daily\')"]').className=`ri ${mood?'hd':''}`;
+  // fetal
+  const ft=rec.fetal;
+  document.getElementById('ri-fetal').innerHTML=ft?`${ft}<span class="ri-unit">次</span>`:'<span style="font-size:12px;font-weight:400;color:var(--gray300)">未记录</span>';
+  document.querySelector('[onclick="openEdit(\'fetal\')"]').className=`ri ${ft?'hd':''}`;
+  // note
+  const note=rec.note;
+  document.getElementById('ri-note').textContent=note||'点击添加今日备注或计划…';
+  document.getElementById('ri-note').className=note?'ri-note':'ri-note em';
+}
+
+function changeMonth(dir){const n=curMI+dir;if(n<0||n>=ALL_MONTHS.length)return;curMI=n;renderCal();}
+function jumpToday(){curMI=ALL_MONTHS.findIndex(m=>m.y===2025&&m.m===3);selDate=new Date(TODAY);renderCal();renderPanel();}
+
+// ── Edit overlay ─────────────────────────────────────────────
+let editMode='';
+const ECFG={
+  weight:{
+    title:'记录体重',
+    render(r){return`<div class="fg"><div class="fl">今日体重</div><div class="nr"><button class="nb" onclick="adj('we',-0.1)">－</button><input class="ninp" id="ef-we" type="number" step="0.1" value="${r.weight||'62.0'}"><div class="nu">kg</div><button class="nb" onclick="adj('we',0.1)">＋</button></div></div>`},
+    save(r){r.weight=document.getElementById('ef-we').value;return r;}
+  },
+  bp:{
+    title:'记录血压',
+    render(r){const p=(r.bp||'').split('/');return`<div class="fg"><div class="fl">血压（mmHg）</div><div class="bpr"><input class="bpi" id="ef-sys" type="number" placeholder="收缩压" value="${p[0]||''}"><div class="bps">/</div><input class="bpi" id="ef-dia" type="number" placeholder="舒张压" value="${p[1]||''}"><div class="bpu">mmHg</div></div><div style="font-size:11px;color:var(--gray400);margin-top:6px;">正常参考：≤ 140/90 mmHg</div></div>`},
+    save(r){const s=document.getElementById('ef-sys').value,d=document.getElementById('ef-dia').value;r.bp=s&&d?`${s}/${d}`:'';return r;}
+  },
+  fetal:{
+    title:'记录胎动',
+    render(r){return`<div class="fg"><div class="fl">今日胎动次数</div><div class="nr"><button class="nb" onclick="adj('ft',-1)">－</button><input class="ninp" id="ef-ft" type="number" step="1" min="0" value="${r.fetal||0}"><div class="nu">次</div><button class="nb" onclick="adj('ft',1)">＋</button></div><div style="font-size:11px;color:var(--gray400);margin-top:7px;">12小时内少于10次请及时就医</div></div>`},
+    save(r){r.fetal=document.getElementById('ef-ft').value;return r;}
+  },
+  daily:{
+    title:'心情 & 症状',
+    render(r){
+      const moods=['😄','🙂','😐','😔','😭'];
+      const mb=moods.map(e=>`<button class="mb${r.mood===e?' active':''}" onclick="selMood(this,'${e}')" data-m="${e}">${e}</button>`).join('');
+      const symps=['腰背酸痛','水肿','气短','失眠','孕吐','腿抽筋','头痛','胃部不适','无不适'];
+      const sel=r.symptoms||[];
+      const sc=symps.map(s=>`<span class="sc${sel.includes(s)?' active':''}" onclick="this.classList.toggle('active')">${s}</span>`).join('');
+      return`<div class="fg"><div class="fl">今日心情</div><div class="mr">${mb}</div></div><div class="fg"><div class="fl">今日症状（可多选）</div><div class="sw">${sc}</div></div>`;
+    },
+    save(r){const a=document.querySelector('.mr .mb.active');r.mood=a?a.dataset.m:'';r.symptoms=[...document.querySelectorAll('.sw .sc.active')].map(e=>e.textContent);return r;}
+  },
+  note:{
+    title:'备注 & 计划',
+    render(r){
+      const plans=r.plans&&r.plans.length?r.plans:[{text:'产检预约',done:false},{text:'准备待产包',done:false},{text:'练习呼吸法',done:false}];
+      const ph=plans.map(p=>`<div class="pi${p.done?' done':''}" onclick="this.classList.toggle('done');this.querySelector('.pck').textContent=this.classList.contains('done')?'✓':''"><div class="pck">${p.done?'✓':''}</div><div class="ptx">${p.text}</div></div>`).join('');
+      return`<div class="fg"><div class="fl">备注</div><textarea class="nta" id="ef-note" placeholder="记录感受、提醒或想法…">${r.note||''}</textarea></div><div class="fg"><div class="fl">今日计划</div><div class="pw">${ph}</div></div>`;
+    },
+    save(r){r.note=document.getElementById('ef-note').value;r.plans=[...document.querySelectorAll('.pw .pi')].map(el=>({text:el.querySelector('.ptx').textContent,done:el.classList.contains('done')}));return r;}
+  }
+};
+
+function openEdit(mode){
+  editMode=mode;const cfg=ECFG[mode];const rec=getRec(selDate)||{};
+  const w=wi(selDate);const ms=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('etitle').textContent=cfg.title;
+  document.getElementById('edatel').textContent=`${selDate.getFullYear()}年${ms[selDate.getMonth()]}${selDate.getDate()}日${w?` · 孕 ${w.week} 周 ${w.day} 天`:''}`;
+  document.getElementById('ebody').innerHTML=cfg.render(rec);
+  document.getElementById('edit-ov').classList.add('show');
+}
+function saveEdit(){
+  const cfg=ECFG[editMode];const rec=getRec(selDate)||{};
+  setRec(selDate,cfg.save(rec));
+  document.getElementById('edit-ov').classList.remove('show');
+  renderPanel();renderCal();
+}
+function closeEdit(e){if(e.target===document.getElementById('edit-ov'))document.getElementById('edit-ov').classList.remove('show');}
+function adj(id,delta){const el=document.getElementById('ef-'+id);if(!el)return;el.value=(parseFloat(el.value||0)+delta).toFixed(id==='we'?1:0);}
+function selMood(btn,e){btn.closest('.mr').querySelectorAll('.mb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+// ── Init ─────────────────────────────────────────────────────
+updateDayUI();
+renderCal();
+renderPanel();
+</script>
+</body>
+</html>

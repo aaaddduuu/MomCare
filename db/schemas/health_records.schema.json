@@ -21,23 +21,18 @@
 			"bsonType": "string",
 			"description": "记录类型",
 			"title": "记录类型",
-			"enum": ["weight", "blood_pressure", "both"],
-			"default": "both"
+			"enum": ["weight", "blood_pressure", "mood", "fetal_movement", "note", "combined"],
+			"default": "combined"
 		},
 		"record_date": {
-			"bsonType": "date",
-			"description": "记录日期时间",
-			"title": "记录时间",
-			"forceDefaultValue": {
-				"$env": "now"
-			}
+			"bsonType": "string",
+			"description": "记录日期 YYYY-MM-DD 格式",
+			"title": "记录日期"
 		},
 		"weight": {
-			"bsonType": "decimal",
+			"bsonType": "string",
 			"description": "体重 (kg)",
-			"title": "体重",
-			"minimum": 30,
-			"maximum": 200
+			"title": "体重"
 		},
 		"weight_unit": {
 			"bsonType": "string",
@@ -60,29 +55,49 @@
 			"minimum": 40,
 			"maximum": 150
 		},
+		"bp_text": {
+			"bsonType": "string",
+			"description": "血压文本 如 118/76",
+			"title": "血压文本"
+		},
 		"is_abnormal": {
 			"bsonType": "bool",
-			"description": "是否异常 (收缩压>140 或 舒张压>90)",
+			"description": "是否异常",
 			"title": "是否异常",
 			"default": false
 		},
-		"abnormal_type": {
+		"mood": {
+			"bsonType": "string",
+			"description": "心情表情",
+			"title": "心情"
+		},
+		"symptoms": {
 			"bsonType": "array",
-			"description": "异常类型列表",
-			"title": "异常类型",
-			"arrayType": "string",
-			"enum": ["high_systolic", "high_diastolic", "low_systolic", "low_diastolic", "high_weight", "low_weight"]
+			"description": "今日症状列表",
+			"title": "症状",
+			"arrayType": "string"
+		},
+		"fetal_movement": {
+			"bsonType": "string",
+			"description": "胎动次数",
+			"title": "胎动次数"
+		},
+		"note": {
+			"bsonType": "string",
+			"description": "备注信息",
+			"title": "备注",
+			"maxLength": 1000
+		},
+		"plans": {
+			"bsonType": "array",
+			"description": "今日计划列表",
+			"title": "计划",
+			"arrayType": "object"
 		},
 		"week_of_pregnancy": {
 			"bsonType": "int",
 			"description": "记录时的孕周",
 			"title": "孕周"
-		},
-		"notes": {
-			"bsonType": "string",
-			"description": "备注信息",
-			"title": "备注",
-			"maxLength": 500
 		},
 		"data_source": {
 			"bsonType": "string",
@@ -92,7 +107,7 @@
 			"default": "manual"
 		},
 		"create_time": {
-			"bsonType": "date",
+			"bsonType": "timestamp",
 			"description": "创建时间",
 			"title": "创建时间",
 			"forceDefaultValue": {
@@ -100,7 +115,7 @@
 			}
 		},
 		"update_time": {
-			"bsonType": "date",
+			"bsonType": "timestamp",
 			"description": "更新时间",
 			"title": "更新时间"
 		}

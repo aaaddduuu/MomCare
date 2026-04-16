@@ -110,3 +110,70 @@ $uni-opacity-hover: 0.7;
 $uni-font-size-title: 20px;
 $uni-font-size-subtitle: 18px;
 $uni-font-size-paragraph: 15px;
+
+/* ==================== 设计图配色体系 ==================== */
+
+/* 奶油色系列 - 背景层级 */
+$mc-cream: #FBF7F2;
+$mc-cream2: #F5EFE6;
+$mc-cream3: #EDE3D6;
+
+/* 玫瑰色系列 - 主色调 */
+$mc-rose: #D4627A;
+$mc-rose-lt: #FAEAEE;
+$mc-rose-mid: #E8A0B0;
+$mc-rose-dk: #B04560;
+$mc-blush: #F2D5DC;
+
+/* 孕早期 - 粉色系 */
+$mc-early-bg: #FFF0F3;
+$mc-early-bg2: #FDD8E3;
+$mc-early-text: #C04868;
+$mc-early-week: #E8A0B0;
+
+/* 孕中期 - 琥珀色系 */
+$mc-mid-bg: #FEF6E8;
+$mc-mid-bg2: #FDE8C0;
+$mc-mid-text: #B07020;
+$mc-mid-week: #F0C070;
+
+/* 孕晚期 - 紫色系 */
+$mc-late-bg: #EEE8FA;
+$mc-late-bg2: #DDD0F5;
+$mc-late-text: #6A4AAA;
+$mc-late-week: #B8A0E0;
+
+/* 鼠尾草绿 - 妈妈变化 */
+$mc-sage: #7BA08C;
+$mc-sage-lt: #EAF2EE;
+$mc-sage-dk: #3A6A54;
+
+/* 琥珀色 - 提醒/饮食 */
+$mc-amber: #C98A3A;
+$mc-amber-lt: #FDF3E3;
+
+/* 天空蓝 */
+$mc-sky: #5B8FC9;
+$mc-sky-lt: #EBF2FB;
+
+/* 健康绿 */
+$mc-green: #5BBF7C;
+$mc-green-lt: #EAF7EF;
+
+/* 灰色系列 */
+$mc-gray50: #FAFAF8;
+$mc-gray100: #F2F0EE;
+$mc-gray200: #E4E1DC;
+$mc-gray300: #C8C4BC;
+$mc-gray400: #9C9890;
+$mc-gray600: #4A4844;
+$mc-gray900: #1C1A17;
+
+/* ==================== 设计图圆角 & 阴影 ==================== */
+
+$mc-radius: 32rpx;
+$mc-radius-sm: 20rpx;
+$mc-radius-pill: 9999rpx;
+
+$mc-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
+$mc-shadow-lg: 0 12rpx 56rpx rgba(60, 30, 10, 0.12);
