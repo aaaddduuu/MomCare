@@ -22,6 +22,14 @@
 			}
 		},
 		{
+			"path": "pages/knowledge/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FFFFFF"
+			}
+		},
+		{
 			"path": "pages/archives/index",
 			"style": {
 				"navigationStyle": "custom",

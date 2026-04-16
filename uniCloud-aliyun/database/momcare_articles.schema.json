@@ -1,0 +1,24 @@
+{
+  "bsonType": "object",
+  "required": ["title", "content", "category", "target_week_start", "target_week_end"],
+  "permission": {
+    "read": true,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": { "description": "文章ID，系统自动生成" },
+    "title": { "bsonType": "string", "description": "文章标题" },
+    "cover_image": { "bsonType": "string", "description": "封面图URL，可选" },
+    "summary": { "bsonType": "string", "description": "摘要（显示在列表）" },
+    "content": { "bsonType": "string", "description": "正文内容（支持Markdown或HTML）" },
+    "category": { "bsonType": "string", "description": "分类：孕早期/孕中期/孕晚期/分娩/育儿" },
+    "tags": { "bsonType": "array", "description": "标签数组，如 ['热门', '医生认证']" },
+    "target_week_start": { "bsonType": "int", "description": "适用孕周起始（如 20）" },
+    "target_week_end": { "bsonType": "int", "description": "适用孕周结束（如 24）" },
+    "view_count": { "bsonType": "int", "description": "阅读数" },
+    "read_time": { "bsonType": "int", "description": "预计阅读时间（分钟）" },
+    "publish_time": { "bsonType": "timestamp", "description": "发布时间戳" }
+  }
+}

@@ -14,11 +14,34 @@
 					placeholder-class="search-placeholder"
 					:value="searchKeyword"
 					@input="onSearchInput"
+					@confirm="handleSearch"
 				/>
 				<text v-if="searchKeyword" class="search-clear" @tap="clearSearch">✕</text>
 			</view>
-			<view class="filter-btn" @tap="handleFilter">
-				<text class="filter-text">筛选 ▾</text>
+			<view class="filter-btn" :class="{ 'filter-btn-active': showFilterPopup }" @tap="toggleFilter">
+				<text class="filter-text" :class="{ 'filter-text-active': showFilterPopup }">{{ sortLabel }} {{ showFilterPopup ? '▴' : '▾' }}</text>
+			</view>
+		</view>
+
+		<!-- Filter Popup -->
+		<view v-if="showFilterPopup" class="filter-popup-mask" @tap="showFilterPopup = false">
+			<view class="filter-popup" @tap.stop>
+				<view
+					class="filter-option"
+					:class="{ 'filter-option-active': sortBy === 'publish_time' }"
+					@tap="applySort('publish_time')"
+				>
+					<text class="filter-option-text">最新发布</text>
+					<text v-if="sortBy === 'publish_time'" class="filter-check">✓</text>
+				</view>
+				<view
+					class="filter-option"
+					:class="{ 'filter-option-active': sortBy === 'view_count' }"
+					@tap="applySort('view_count')"
+				>
+					<text class="filter-option-text">最多阅读</text>
+					<text v-if="sortBy === 'view_count'" class="filter-check">✓</text>
+				</view>
 			</view>
 		</view>
 
@@ -27,7 +50,7 @@
 			<scroll-view scroll-x class="tabs-scroll" :show-scrollbar="false">
 				<view class="tabs">
 					<view
-						v-for="(tab, index) in categoryTabs"
+						v-for="tab in categoryTabs"
 						:key="tab.id"
 						class="tab"
 						:class="{ active: activeTab === tab.id }"
@@ -40,209 +63,94 @@
 		</view>
 
 		<!-- Scrollable Content -->
-		<scroll-view scroll-y class="scroll-content">
-			<!-- Week Recommendation Banner -->
-		<view class="week-banner">
-			<view class="week-badge">
-				<text class="week-icon">📅</text>
-				<text class="week-text">孕23周推荐</text>
-			</view>
-			<text class="banner-title">糖耐量检查攻略</text>
-			<text class="banner-desc">孕中期重要检查项目，提前了解注意事项</text>
-		</view>
+		<scroll-view scroll-y class="scroll-content" @scrolltolower="loadMore">
 
-		<!-- Article Feed -->
-		<view class="article-feed">
-			<!-- Article Card 1 -->
-			<view class="article-card" @tap="readArticle(articleList[0])">
-				<view class="article-cover">
-					<view class="cover-placeholder gradient-1">
-						<text class="cover-icon">👶</text>
-					</view>
-					<view class="article-tag">热门</view>
+			<!-- Week Recommendation Banner (only for recommended tab) -->
+			<view v-if="activeTab === 'recommended' && bannerArticle" class="week-banner" @tap="readArticle(bannerArticle)">
+				<view class="week-badge">
+					<text class="week-icon">📅</text>
+					<text class="week-text">孕{{ currentWeek }}周推荐</text>
 				</view>
-				<view class="article-content">
-					<view class="article-header">
-						<text class="article-title">孕中期四维彩超攻略：什么时候做？要注意什么？</text>
-						<view class="doctor-badge">
-							<text class="doctor-icon">👨‍⚕️</text>
-							<text class="doctor-text">医生认证</text>
-						</view>
+				<text class="banner-title">{{ bannerArticle.title }}</text>
+				<text class="banner-desc">{{ bannerArticle.summary }}</text>
+			</view>
+
+			<!-- Loading Skeleton -->
+			<view v-if="loading" class="article-feed">
+				<view class="article-card" v-for="i in 3" :key="'sk'+i">
+					<view class="article-cover">
+						<view class="skeleton-cover"></view>
 					</view>
-					<text class="article-excerpt">四维彩超是孕中期最重要的排畸检查之一，最佳检查时间是20-24周。本文为您详细解读检查流程、注意事项...</text>
-					<view class="article-meta">
-						<view class="meta-item">
-							<text class="meta-icon">👁️</text>
-							<text class="meta-text">12.5k</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">⏱️</text>
-							<text class="meta-text">8分钟</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">👍</text>
-							<text class="meta-text">892</text>
-						</view>
+					<view class="article-content">
+						<view class="skeleton-title"></view>
+						<view class="skeleton-text"></view>
+						<view class="skeleton-text short"></view>
 					</view>
 				</view>
 			</view>
 
-			<!-- Article Card 2 -->
-			<view class="article-card" @tap="readArticle(articleList[1])">
-				<view class="article-cover">
-					<view class="cover-placeholder gradient-2">
-						<text class="cover-icon">🧬</text>
+			<!-- Article Feed -->
+			<view v-else-if="feedList.length > 0" class="article-feed">
+				<view
+					class="article-card"
+					v-for="article in feedList"
+					:key="article._id"
+					@tap="readArticle(article)"
+				>
+					<view class="article-cover">
+						<image
+							v-if="article.cover_image && !coverErrorMap[article._id]"
+							class="cover-image"
+							:src="article.cover_image"
+							mode="aspectFill"
+							@error="onCoverError(article)"
+						/>
+						<view v-else class="cover-placeholder" :class="getGradientClass(article._id)">
+							<text class="cover-icon">{{ getCategoryIcon(article.category) }}</text>
+						</view>
+						<!-- Tags overlay -->
+						<view v-if="article.tags && article.tags.length > 0" class="article-tag" :class="{ important: article.tags.includes('必读') || article.tags.includes('紧急必看') }">
+							{{ article.tags[0] }}
+						</view>
+					</view>
+					<view class="article-content">
+						<view class="article-header">
+							<text class="article-title">{{ article.title }}</text>
+							<view v-if="article.tags && article.tags.includes('医生认证')" class="doctor-badge">
+								<text class="doctor-icon">👨‍⚕️</text>
+								<text class="doctor-text">医生认证</text>
+							</view>
+						</view>
+						<text class="article-excerpt">{{ article.summary }}</text>
+						<view class="article-meta">
+							<view class="meta-item">
+								<text class="meta-icon">👁️</text>
+								<text class="meta-text">{{ formatViewCount(article.view_count) }}</text>
+							</view>
+							<view class="meta-item">
+								<text class="meta-icon">⏱️</text>
+								<text class="meta-text">{{ article.read_time }}分钟</text>
+							</view>
+							<view v-if="article.target_week_start" class="meta-item">
+								<text class="meta-icon">📆</text>
+								<text class="meta-text">孕{{ article.target_week_start }}-{{ article.target_week_end }}周</text>
+							</view>
+						</view>
 					</view>
 				</view>
-				<view class="article-content">
-					<view class="article-header">
-						<text class="article-title">唐筛与无创DNA检测如何选择？一篇讲清楚</text>
-						<view class="doctor-badge">
-							<text class="doctor-icon">👨‍⚕️</text>
-							<text class="doctor-text">医生认证</text>
-						</view>
-					</view>
-					<text class="article-excerpt">唐氏筛查和无创DNA检测都是染色体异常的筛查手段，但准确率、适用人群、价格都有差异。孕妈们该如何选择？</text>
-					<view class="article-meta">
-						<view class="meta-item">
-							<text class="meta-icon">👁️</text>
-							<text class="meta-text">8.3k</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">⏱️</text>
-							<text class="meta-text">6分钟</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">👍</text>
-							<text class="meta-text">654</text>
-						</view>
-					</view>
+
+				<!-- Load More Indicator -->
+				<view v-if="hasMore" class="load-more" @tap="loadMore">
+					<text class="load-more-text">{{ loadingMore ? '加载中...' : '点击加载更多' }}</text>
 				</view>
 			</view>
 
-			<!-- Article Card 3 -->
-			<view class="article-card" @tap="readArticle(articleList[2])">
-				<view class="article-cover">
-					<view class="cover-placeholder gradient-3">
-						<text class="cover-icon">🍬</text>
-					</view>
-					<view class="article-tag important">必读</view>
-				</view>
-				<view class="article-content">
-					<view class="article-header">
-						<text class="article-title">妊娠期糖尿病：糖耐量检查全攻略</text>
-						<view class="doctor-badge">
-							<text class="doctor-icon">👨‍⚕️</text>
-							<text class="doctor-text">医生认证</text>
-						</view>
-					</view>
-					<text class="article-excerpt">孕24-28周需要做糖耐量检查，筛查妊娠期糖尿病。检查前要空腹？喝糖水难受吗？结果怎么看？一文读懂。</text>
-					<view class="article-meta">
-						<view class="meta-item">
-							<text class="meta-icon">👁️</text>
-							<text class="meta-text">15.2k</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">⏱️</text>
-							<text class="meta-text">10分钟</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">👍</text>
-							<text class="meta-text">1.1k</text>
-						</view>
-					</view>
-				</view>
+			<!-- Empty State -->
+			<view v-else class="empty-state">
+				<text class="empty-icon">📖</text>
+				<text class="empty-text">暂无相关文章</text>
+				<text class="empty-hint">换个分类看看吧</text>
 			</view>
-
-			<!-- Article Card 4 -->
-			<view class="article-card" @tap="readArticle(articleList[3])">
-				<view class="article-cover">
-					<view class="cover-placeholder gradient-4">
-						<text class="cover-icon">🏃‍♀️</text>
-					</view>
-				</view>
-				<view class="article-content">
-					<view class="article-header">
-						<text class="article-title">孕中期运动指南：哪些运动适合？运动时要注意什么？</text>
-						<view class="doctor-badge">
-							<text class="doctor-icon">👨‍⚕️</text>
-							<text class="doctor-text">医生认证</text>
-						</view>
-					</view>
-					<text class="article-excerpt">孕中期是运动的黄金时期。适量运动有助于控制体重、缓解腰痛、为分娩做准备。但哪些运动安全？运动强度如何把握？</text>
-					<view class="article-meta">
-						<view class="meta-item">
-							<text class="meta-icon">👁️</text>
-							<text class="meta-text">6.8k</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">⏱️</text>
-							<text class="meta-text">5分钟</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">👍</text>
-							<text class="meta-text">423</text>
-						</view>
-					</view>
-				</view>
-			</view>
-
-			<!-- Article Card 5 -->
-			<view class="article-card" @tap="readArticle(articleList[4])">
-				<view class="article-cover">
-					<view class="cover-placeholder gradient-5">
-						<text class="cover-icon">😴</text>
-					</view>
-				</view>
-				<view class="article-content">
-					<view class="article-header">
-						<text class="article-title">孕中期睡眠质量下降？5个方法帮助您睡个好觉</text>
-						<view class="doctor-badge">
-							<text class="doctor-icon">👨‍⚕️</text>
-							<text class="doctor-text">医生认证</text>
-						</view>
-					</view>
-					<text class="article-excerpt">随着肚子越来越大，很多孕妈开始失眠、多梦、夜间频繁起夜。如何改善孕中期睡眠质量？试试这些方法。</text>
-					<view class="article-meta">
-						<view class="meta-item">
-							<text class="meta-icon">👁️</text>
-							<text class="meta-text">9.1k</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">⏱️</text>
-							<text class="meta-text">4分钟</text>
-						</view>
-						<view class="meta-item">
-							<text class="meta-icon">👍</text>
-							<text class="meta-text">567</text>
-						</view>
-					</view>
-				</view>
-			</view>
-		</view>
-
-		<!-- Video Course Section -->
-		<view class="video-section">
-			<view class="section-header">
-				<text class="section-title">专家视频课</text>
-				<text class="section-action">更多 →</text>
-			</view>
-			<scroll-view class="video-list" scroll-x>
-				<view class="video-card" v-for="video in videoList" :key="video.id" @tap="watchVideo(video)">
-					<view class="video-cover">
-						<view class="video-placeholder" :class="video.gradientClass">
-							<text class="video-icon">▶️</text>
-						</view>
-						<view class="video-duration">{{ video.duration }}</view>
-					</view>
-					<text class="video-title">{{ video.title }}</text>
-					<view class="video-doctor">
-						<text class="doctor-icon-small">👨‍⚕️</text>
-						<text class="doctor-name">{{ video.doctor }}</text>
-					</view>
-				</view>
-			</scroll-view>
-		</view>
 
 			<!-- Bottom Spacer for TabBar -->
 			<view class="bottom-spacer"></view>
@@ -251,163 +159,198 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
 
-// Search state
+// ── State ──
+const currentWeek = ref(23)
 const searchKeyword = ref('')
-const showFilterSheet = ref(false)
+const activeTab = ref('recommended')
+const articleList = ref([])
+const loading = ref(false)
+const loadingMore = ref(false)
+const hasMore = ref(false)
+const pageSize = 10
+let currentPage = 0
+const coverErrorMap = ref({})
 
-// Category tabs
+// Sort & Filter
+const sortBy = ref('')
+const showFilterPopup = ref(false)
+
+const sortLabel = computed(() => {
+	if (sortBy.value === 'view_count') return '最多阅读'
+	if (sortBy.value === 'publish_time') return '最新发布'
+	return '筛选'
+})
+
+// Category tabs matching database categories
 const categoryTabs = ref([
 	{ id: 'recommended', name: '为您推荐' },
-	{ id: 'early', name: '孕早期必读' },
-	{ id: 'mid', name: '孕中期指南' },
-	{ id: 'late', name: '孕晚期准备' },
-	{ id: 'checkup', name: '产检全攻略' },
-	{ id: 'nutrition', name: '营养饮食' },
-	{ id: 'parenting', name: '育儿知识' }
+	{ id: '孕早期必读', name: '孕早期必读' },
+	{ id: '孕中期指南', name: '孕中期指南' },
+	{ id: '孕晚期准备', name: '孕晚期准备' },
+	{ id: '分娩与临产', name: '分娩与临产' },
+	{ id: '产后与育儿', name: '产后与育儿' }
 ])
 
-const activeTab = ref('recommended')
-const scrollLeft = ref(0)
+// Banner article: first item in the full list when on Recommended tab
+const bannerArticle = computed(() => {
+	if (activeTab.value !== 'recommended' || articleList.value.length === 0) return null
+	return articleList.value[0]
+})
 
-// Mock article data for 23-week pregnancy
-const articleList = ref([
-	{
-		id: 1,
-		title: '孕中期四维彩超攻略：什么时候做？要注意什么？',
-		excerpt: '四维彩超是孕中期最重要的排畸检查之一，最佳检查时间是20-24周。本文为您详细解读检查流程、注意事项...',
-		cover: 'gradient-1',
-		icon: '👶',
-		tag: '热门',
-		doctorCertified: true,
-		views: '12.5k',
-		readTime: '8分钟',
-		likes: 892
-	},
-	{
-		id: 2,
-		title: '唐筛与无创DNA检测如何选择？一篇讲清楚',
-		excerpt: '唐氏筛查和无创DNA检测都是染色体异常的筛查手段，但准确率、适用人群、价格都有差异。孕妈们该如何选择？',
-		cover: 'gradient-2',
-		icon: '🧬',
-		tag: null,
-		doctorCertified: true,
-		views: '8.3k',
-		readTime: '6分钟',
-		likes: 654
-	},
-	{
-		id: 3,
-		title: '妊娠期糖尿病：糖耐量检查全攻略',
-		excerpt: '孕24-28周需要做糖耐量检查，筛查妊娠期糖尿病。检查前要空腹？喝糖水难受吗？结果怎么看？一文读懂。',
-		cover: 'gradient-3',
-		icon: '🍬',
-		tag: '必读',
-		doctorCertified: true,
-		views: '15.2k',
-		readTime: '10分钟',
-		likes: 1100
-	},
-	{
-		id: 4,
-		title: '孕中期运动指南：哪些运动适合？运动时要注意什么？',
-		excerpt: '孕中期是运动的黄金时期。适量运动有助于控制体重、缓解腰痛、为分娩做准备。但哪些运动安全？运动强度如何把握？',
-		cover: 'gradient-4',
-		icon: '🏃‍♀️',
-		tag: null,
-		doctorCertified: true,
-		views: '6.8k',
-		readTime: '5分钟',
-		likes: 423
-	},
-	{
-		id: 5,
-		title: '孕中期睡眠质量下降？5个方法帮助您睡个好觉',
-		excerpt: '随着肚子越来越大，很多孕妈开始失眠、多梦、夜间频繁起夜。如何改善孕中期睡眠质量？试试这些方法。',
-		cover: 'gradient-5',
-		icon: '😴',
-		tag: null,
-		doctorCertified: true,
-		views: '9.1k',
-		readTime: '4分钟',
-		likes: 567
+// Feed list: exclude banner article to prevent duplication
+const feedList = computed(() => {
+	if (activeTab.value === 'recommended' && articleList.value.length > 0) {
+		return articleList.value.slice(1)
 	}
-])
+	return articleList.value
+})
 
-// Mock video data
-const videoList = ref([
-	{
-		id: 1,
-		title: '孕中期营养搭配',
-		doctor: '张主任',
-		duration: '12:30',
-		gradientClass: 'video-gradient-1'
-	},
-	{
-		id: 2,
-		title: '四维彩超检查详解',
-		doctor: '李医生',
-		duration: '15:45',
-		gradientClass: 'video-gradient-2'
-	},
-	{
-		id: 3,
-		title: '孕期体重管理',
-		doctor: '王医师',
-		duration: '10:20',
-		gradientClass: 'video-gradient-3'
+// ── Data Fetching ──
+
+function getDefaultSort() {
+	return activeTab.value === 'recommended' ? 'view_count' : 'publish_time'
+}
+
+async function fetchArticles(reset = true) {
+	if (reset) {
+		currentPage = 0
+		articleList.value = []
+		loading.value = true
+	} else {
+		loadingMore.value = true
 	}
-])
 
-// Search handlers
-const onSearchInput = (e) => {
+	try {
+		const db = uniCloud.database()
+		const cmd = db.command
+		const effectiveSort = sortBy.value || getDefaultSort()
+
+		// Build where clause
+		let where = {}
+		if (activeTab.value === 'recommended') {
+			where.target_week_start = cmd.lte(currentWeek.value)
+			where.target_week_end = cmd.gte(currentWeek.value)
+		} else {
+			where.category = activeTab.value
+		}
+
+		// Apply search keyword
+		if (searchKeyword.value.trim()) {
+			where.title = new RegExp(searchKeyword.value.trim(), 'i')
+		}
+
+		const skip = currentPage * pageSize
+		const res = await db.collection('momcare_articles')
+			.where(where)
+			.orderBy(effectiveSort, 'desc')
+			.skip(skip)
+			.limit(pageSize)
+			.get()
+
+		const data = (res.result && res.result.data) || []
+
+		if (reset) {
+			articleList.value = data
+		} else {
+			articleList.value = [...articleList.value, ...data]
+		}
+
+		hasMore.value = data.length >= pageSize
+	} catch (e) {
+		console.error('fetchArticles error:', e)
+	} finally {
+		loading.value = false
+		loadingMore.value = false
+	}
+}
+
+function loadMore() {
+	if (loadingMore.value || !hasMore.value) return
+	currentPage++
+	fetchArticles(false)
+}
+
+// ── Helpers ──
+
+function formatViewCount(count) {
+	if (!count) return '0'
+	if (count >= 10000) {
+		return (count / 10000).toFixed(1) + 'w'
+	}
+	if (count >= 1000) {
+		return (count / 1000).toFixed(1) + 'k'
+	}
+	return String(count)
+}
+
+const gradientClasses = ['gradient-1', 'gradient-2', 'gradient-3', 'gradient-4', 'gradient-5']
+function getGradientClass(id) {
+	if (!id) return 'gradient-1'
+	const hash = id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+	return gradientClasses[hash % gradientClasses.length]
+}
+
+function getCategoryIcon(category) {
+	const icons = {
+		'孕早期必读': '🤰',
+		'孕中期指南': '👶',
+		'孕晚期准备': '🤱',
+		'分娩与临产': '🏥',
+		'产后与育儿': '🍼'
+	}
+	return icons[category] || '📖'
+}
+
+function onCoverError(article) {
+	coverErrorMap.value[article._id] = true
+}
+
+// ── Event Handlers ──
+
+function onSearchInput(e) {
 	searchKeyword.value = e.detail.value
 }
 
-const handleSearch = () => {
-	console.log('Search:', searchKeyword.value)
-	uni.showToast({
-		title: '搜索功能开发中',
-		icon: 'none'
-	})
+function handleSearch() {
+	fetchArticles(true)
 }
 
-const handleFilter = () => {
-	uni.showToast({
-		title: '筛选功能开发中',
-		icon: 'none'
-	})
+function toggleFilter() {
+	showFilterPopup.value = !showFilterPopup.value
 }
 
-const clearSearch = () => {
+function applySort(field) {
+	sortBy.value = field
+	showFilterPopup.value = false
+	fetchArticles(true)
+}
+
+function clearSearch() {
 	searchKeyword.value = ''
+	fetchArticles(true)
 }
 
-// Tab switch
-const switchTab = (tabId) => {
+function switchTab(tabId) {
+	if (activeTab.value === tabId) return
 	activeTab.value = tabId
-	// Calculate scroll position for active tab
-	const index = categoryTabs.value.findIndex(tab => tab.id === tabId)
-	scrollLeft.value = index * 120 // Approximate tab width
+	// Reset sort to default for the new tab
+	sortBy.value = ''
+	fetchArticles(true)
 }
 
-// Read article
-const readArticle = (article) => {
-	console.log('Read article:', article)
+function readArticle(article) {
 	uni.navigateTo({
-		url: `/pages/knowledge/article?id=${article.id}`
+		url: `/pages/knowledge/detail?id=${article._id}`
 	})
 }
 
-// Watch video
-const watchVideo = (video) => {
-	console.log('Watch video:', video)
-	uni.navigateTo({
-		url: `/pages/knowledge/video?id=${video.id}`
-	})
-}
+// ── Init ──
+onMounted(() => {
+	fetchArticles(true)
+})
 </script>
 
 <style scoped lang="scss">
@@ -434,6 +377,7 @@ page {
 	height: 100vh;
 	background-color: #FFFFFF;
 	box-sizing: border-box;
+	position: relative;
 }
 
 /* ── Search Row ── */
@@ -489,12 +433,81 @@ page {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	transition: background 0.2s ease;
+}
+
+.filter-btn-active {
+	background: #FCE7F3;
 }
 
 .filter-text {
 	font-size: 24rpx;
 	font-weight: 500;
 	color: #6E6A64;
+}
+
+.filter-text-active {
+	color: #C2185B;
+}
+
+/* ── Filter Popup ── */
+.filter-popup-mask {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 100;
+	background: rgba(0, 0, 0, 0.2);
+}
+
+.filter-popup {
+	position: absolute;
+	top: 160rpx;
+	right: 32rpx;
+	background: #FFFFFF;
+	border-radius: 24rpx;
+	box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+	overflow: hidden;
+	min-width: 260rpx;
+	animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateY(-16rpx); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.filter-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 28rpx 32rpx;
+	transition: background 0.15s ease;
+}
+
+.filter-option:active {
+	background: #F2F0EE;
+}
+
+.filter-option-active {
+	background: #FFF5F8;
+}
+
+.filter-option-text {
+	font-size: 28rpx;
+	color: #3A3834;
+	font-weight: 500;
+}
+
+.filter-option-active .filter-option-text {
+	color: #C2185B;
+}
+
+.filter-check {
+	font-size: 28rpx;
+	color: #C2185B;
+	font-weight: 600;
 }
 
 /* ── Tabs ── */
@@ -519,10 +532,11 @@ page {
 	padding: 20rpx 28rpx;
 	gap: 10rpx;
 	border-bottom: 4rpx solid transparent;
+	transition: border-color 0.2s ease;
 }
 
 .tab.active {
-	border-bottom-color: #E8637A;
+	border-bottom-color: #C2185B;
 }
 
 .tab-label {
@@ -530,10 +544,12 @@ page {
 	font-weight: 500;
 	color: #9C9890;
 	white-space: nowrap;
+	transition: color 0.2s ease;
 }
 
 .tab-label-active {
-	color: #E8637A;
+	color: #C2185B;
+	font-weight: 600;
 }
 
 /* Scrollable Content Area */
@@ -587,6 +603,11 @@ page {
 	font-size: 26rpx;
 	color: #616161;
 	line-height: 1.5;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 /* Article Feed */
@@ -601,12 +622,23 @@ page {
 	background-color: #FFFFFF;
 	border-radius: 32rpx;
 	overflow: hidden;
+	box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.06);
+	transition: transform 0.15s ease;
+}
+
+.article-card:active {
+	transform: scale(0.985);
 }
 
 .article-cover {
 	position: relative;
 	width: 100%;
 	height: 320rpx;
+}
+
+.cover-image {
+	width: 100%;
+	height: 100%;
 }
 
 .cover-placeholder {
@@ -676,6 +708,10 @@ page {
 	color: #191C1E;
 	line-height: 1.4;
 	margin-right: 16rpx;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .doctor-badge {
@@ -704,6 +740,11 @@ page {
 	color: #757575;
 	line-height: 1.6;
 	margin-bottom: 20rpx;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 
 .article-meta {
@@ -727,109 +768,82 @@ page {
 	color: #9E9E9E;
 }
 
-/* Video Section */
-.video-section {
-	margin-bottom: 32rpx;
-}
-
-.section-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 20rpx;
-}
-
-.section-title {
-	font-size: 36rpx;
-	font-weight: 600;
-	color: #191C1E;
-}
-
-.section-action {
-	font-size: 28rpx;
-	color: #C2185B;
-}
-
-.video-list {
-	white-space: nowrap;
-}
-
-.video-card {
-	display: inline-block;
-	width: 240rpx;
-	margin-right: 16rpx;
-	background-color: #FFFFFF;
-	border-radius: 24rpx;
-	overflow: hidden;
-	vertical-align: top;
-}
-
-.video-cover {
-	position: relative;
+/* ── Loading Skeleton ── */
+.skeleton-cover {
 	width: 100%;
-	height: 160rpx;
+	height: 320rpx;
+	background: linear-gradient(90deg, #F2F0EE 25%, #E4E1DC 50%, #F2F0EE 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+	border-radius: 32rpx 32rpx 0 0;
+}
+
+.skeleton-title {
+	width: 80%;
+	height: 32rpx;
+	background: linear-gradient(90deg, #F2F0EE 25%, #E4E1DC 50%, #F2F0EE 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+	border-radius: 8rpx;
 	margin-bottom: 16rpx;
 }
 
-.video-placeholder {
+.skeleton-text {
 	width: 100%;
-	height: 100%;
+	height: 26rpx;
+	background: linear-gradient(90deg, #F2F0EE 25%, #E4E1DC 50%, #F2F0EE 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s infinite;
+	border-radius: 8rpx;
+	margin-bottom: 12rpx;
+}
+
+.skeleton-text.short {
+	width: 60%;
+}
+
+@keyframes shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -200% 0; }
+}
+
+/* ── Empty State ── */
+.empty-state {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+	padding: 120rpx 32rpx;
 }
 
-.video-gradient-1 {
-	background: linear-gradient(135deg, #E3F2FD 0%, #90CAF9 100%);
+.empty-icon {
+	font-size: 80rpx;
+	margin-bottom: 24rpx;
 }
 
-.video-gradient-2 {
-	background: linear-gradient(135deg, #F3E5F5 0%, #CE93D8 100%);
-}
-
-.video-gradient-3 {
-	background: linear-gradient(135deg, #FFF3E0 0%, #FFCC80 100%);
-}
-
-.video-icon {
-	font-size: 48rpx;
-}
-
-.video-duration {
-	position: absolute;
-	bottom: 12rpx;
-	right: 12rpx;
-	background-color: rgba(0, 0, 0, 0.6);
-	color: #FFFFFF;
-	font-size: 20rpx;
-	padding: 4rpx 12rpx;
-	border-radius: 12rpx;
-}
-
-.video-title {
-	display: block;
-	font-size: 26rpx;
+.empty-text {
+	font-size: 32rpx;
+	color: #6E6A64;
 	font-weight: 500;
-	color: #191C1E;
-	line-height: 1.3;
-	margin: 0 16rpx 12rpx;
-	white-space: normal;
+	margin-bottom: 12rpx;
 }
 
-.video-doctor {
+.empty-hint {
+	font-size: 26rpx;
+	color: #9C9890;
+}
+
+/* ── Load More ── */
+.load-more {
 	display: flex;
-	align-items: center;
-	gap: 6rpx;
-	margin: 0 16rpx 16rpx;
+	justify-content: center;
+	padding: 32rpx 0;
 }
 
-.doctor-icon-small {
-	font-size: 20rpx;
-}
-
-.doctor-name {
-	font-size: 22rpx;
-	color: #9E9E9E;
+.load-more-text {
+	font-size: 26rpx;
+	color: #C2185B;
+	font-weight: 500;
 }
 
 /* Bottom Spacer */
