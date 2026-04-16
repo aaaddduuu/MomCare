@@ -205,24 +205,41 @@ const settingItems = reactive([
 ])
 
 function handlePregInfoTap(item) {
-	console.log('Navigate to:', item.action)
+	uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
 }
 
 function handleRecordTap(item) {
+	const routes = {
+		weightRecords: '/pages/profile/weight-records',
+		bpRecords: '/pages/profile/bp-records',
+		fetalRecords: '/pages/profile/fetal-records',
+		archives: '/pages/archives/index'
+	}
 	if (item.action === 'archives') {
-		uni.switchTab({ url: '/pages/archives/index' })
+		uni.switchTab({ url: routes.archives })
+	} else if (routes[item.action]) {
+		uni.navigateTo({ url: routes[item.action] })
 	}
 }
 
 function handleTodoTap(item) {
-	console.log('Navigate to:', item.action)
+	const routes = {
+		nextCheckup: '/pages/profile/checkup-reminder',
+		hospitalBag: '/pages/profile/hospital-bag',
+		dailyPlan: '/pages/profile/checkup-reminder'
+	}
+	if (routes[item.action]) {
+		uni.navigateTo({ url: routes[item.action] })
+	}
 }
 
 function handleSettingTap(item) {
-	if (item.action === 'privacy') {
-		uni.navigateTo({ url: '/pages/profile/privacy' })
-	} else if (item.action === 'about') {
-		uni.navigateTo({ url: '/pages/profile/about' })
+	const routes = {
+		privacy: '/pages/profile/privacy',
+		about: '/pages/profile/about'
+	}
+	if (routes[item.action]) {
+		uni.navigateTo({ url: routes[item.action] })
 	}
 }
 

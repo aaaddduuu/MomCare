@@ -76,6 +76,62 @@
 				"navigationBarTextStyle": "black",
 				"backgroundColor": "#FAF9F8"
 			}
+		},
+		{
+			"path": "pages/profile/weight-records",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/profile/bp-records",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/profile/fetal-records",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/profile/pregnancy-info",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/profile/hospital-bag",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/profile/checkup-reminder",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/profile/privacy",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
 		}
 	],
 	"globalStyle": {
