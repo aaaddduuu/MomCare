@@ -170,15 +170,15 @@ function markdownToHtml(md) {
 		return '<ol>' + match.replace(/<\/?oli>/g, (tag) => tag === '<oli>' ? '<li>' : '</li>') + '</ol>'
 	})
 
-	// Horizontal rule
-	html = html.replace(/^---+$/gm, '<hr/>')
+	// Horizontal rule - use view instead of hr (not supported in mini-program)
+	html = html.replace(/^---+$/gm, '<view class="hr-divider"></view>')
 
 	// Paragraphs: wrap remaining loose lines
 	html = html.replace(/\n\n+/g, '\n</p>\n<p>\n')
 	// Clean up empty paragraphs around block elements
 	html = html.replace(/<p>\s*<\/p>/g, '')
-	html = html.replace(/<p>\s*(<h[23]|<ul|<ol|<blockquote|<hr)/g, '$1')
-	html = html.replace(/(<\/h[23]>|<\/ul>|<\/ol>|<\/blockquote>|<hr\/>)\s*<\/p>/g, '$1')
+	html = html.replace(/<p>\s*(<h[23]|<ul|<ol|<blockquote|<view class="hr-divider")/g, '$1')
+	html = html.replace(/(<\/h[23]>|<\/ul>|<\/ol>|<\/blockquote>|<\/view>)\s*<\/p>/g, '$1')
 
 	// Wrap in root paragraph if not starting with a block element
 	if (!html.startsWith('<')) {
@@ -519,10 +519,10 @@ onLoad(async (options) => {
 	line-height: 1.7;
 }
 
-:deep(.rich-content) hr {
-	border: none;
+:deep(.rich-content) .hr-divider {
 	border-top: 2rpx solid #E4E1DC;
 	margin: 32rpx 0;
+	height: 0;
 }
 
 :deep(.rich-content) p {

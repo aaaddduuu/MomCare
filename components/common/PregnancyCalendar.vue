@@ -100,7 +100,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { calcWeekInfo, getTrimester, getTrimesterName, getWeekInfo } from '@/stores/health.js'
+import { calcWeekInfo, getTrimester, getTrimesterName } from '@/stores/health.js'
 
 const props = defineProps({
   lmpDate: {
