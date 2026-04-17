@@ -462,8 +462,11 @@ export const useHealthStore = defineStore('health', () => {
 					.doc(checkRes.result.data[0]._id)
 					.update(updateData)
 			} else {
-				// 新建
-				await db.collection('mom_users').add(updateData)
+				// 新建（必须带 openid）
+				await db.collection('mom_users').add({
+					...updateData,
+					openid: openid.value || undefined
+				})
 			}
 			console.log('saveUserProfile: 云端保存成功')
 		} catch (e) {
