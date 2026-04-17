@@ -12,7 +12,7 @@
     </view>
 
     <!-- Week + Due date row -->
-    <view class="hero-row">
+    <view class="hero-row" v-if="pregInfoSet">
       <!-- Left: week block -->
       <view class="week-block">
         <text class="week-label">今天是孕</text>
@@ -33,8 +33,20 @@
       </view>
     </view>
 
+    <!-- 未设置孕期信息时的引导 -->
+    <view class="hero-row setup-guide" v-else @tap="goSetup">
+      <view class="setup-content">
+        <text class="setup-icon">📝</text>
+        <view class="setup-text-wrap">
+          <text class="setup-title">设置您的孕期信息</text>
+          <text class="setup-desc">填写末次月经日期，开始记录孕期旅程</text>
+        </view>
+        <text class="setup-arrow">›</text>
+      </view>
+    </view>
+
     <!-- Fruit comparison pill -->
-    <view class="fruit-row">
+    <view class="fruit-row" v-if="pregInfoSet">
       <text class="fruit-emoji">{{ fruitComparison.emoji }}</text>
       <text class="fruit-text">宝宝现在像一颗 <text class="fruit-name">{{ fruitComparison.name }}</text> 那么大</text>
     </view>
@@ -67,6 +79,10 @@ const props = defineProps({
   fruitComparison: {
     type: Object,
     default: () => ({ emoji: '🫘', name: '种子' })
+  },
+  pregInfoSet: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -79,6 +95,10 @@ const trimesterLabel = computed(() => {
 
 function handleTapAvatar() {
   emit('tapAvatar')
+}
+
+function goSetup() {
+  uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
 }
 </script>
 
@@ -241,5 +261,51 @@ function handleTapAvatar() {
 .fruit-name {
   color: white;
   font-weight: 600;
+}
+
+/* ── Setup guide ── */
+.setup-guide {
+  padding: 12rpx 0;
+}
+
+.setup-content {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 24rpx;
+  padding: 28rpx 28rpx;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.setup-icon {
+  font-size: 44rpx;
+  flex-shrink: 0;
+}
+
+.setup-text-wrap {
+  flex: 1;
+}
+
+.setup-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 4rpx;
+}
+
+.setup-desc {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.setup-arrow {
+  font-size: 40rpx;
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
 }
 </style>

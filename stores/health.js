@@ -174,8 +174,8 @@ function cloudDateToLocal(dateVal) {
 
 export const useHealthStore = defineStore('health', () => {
 	// ── State ──
-	const lmpDate = ref(new Date(2024, 7, 29)) // 末次月经 2024-08-29
-	const dueDate = ref(new Date(2025, 5, 5)) // 预产期 2025-06-05
+	const lmpDate = ref(null) // 末次月经，null 表示未设置
+	const dueDate = ref(null) // 预产期，null 表示未设置
 	const records = ref({}) // { 'YYYY-MM-DD': { weight, bp, mood, symptoms, fetal, note, plans } }
 	const userProfileLoaded = ref(false)
 
@@ -194,9 +194,16 @@ export const useHealthStore = defineStore('health', () => {
 	// ── Getters ──
 	const today = computed(() => new Date())
 
-	const todayWeekInfo = computed(() => calcWeekInfo(lmpDate.value, today.value))
+	// 是否已设置孕期信息
+	const pregInfoSet = computed(() => lmpDate.value !== null)
+
+	const todayWeekInfo = computed(() => {
+		if (!lmpDate.value) return null
+		return calcWeekInfo(lmpDate.value, today.value)
+	})
 
 	const daysUntilDue = computed(() => {
+		if (!dueDate.value) return 0
 		const diff = dueDate.value.getTime() - today.value.getTime()
 		return Math.max(0, Math.ceil(diff / 86400000))
 	})
@@ -1024,6 +1031,7 @@ export const useHealthStore = defineStore('health', () => {
 		records,
 		userInfo,
 		userProfileLoaded,
+		pregInfoSet,
 		// getters
 		today,
 		todayWeekInfo,

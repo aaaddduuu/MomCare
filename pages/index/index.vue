@@ -15,6 +15,7 @@
 				:weekInfo="healthStore.todayWeekInfo || { week: 0, day: 0, total: 0 }"
 				:daysUntilDue="healthStore.daysUntilDue"
 				:fruitComparison="healthStore.fruitComparison"
+				:pregInfoSet="healthStore.pregInfoSet"
 				@tapAvatar="goProfile"
 			/>
 
