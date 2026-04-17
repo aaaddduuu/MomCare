@@ -3,12 +3,14 @@
 		<!-- 状态栏占位 -->
 		<view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
 
-		<view class="pc-avatar-wrap">
+		<view class="pc-avatar-wrap" @tap="handleAvatarTap">
+			<!-- 头像 -->
 			<view class="pc-avatar">
-				<text class="pc-avatar-text">{{ userInfo.avatar }}</text>
+				<image v-if="isCustomAvatar" class="pc-avatar-img" :src="displayAvatar" mode="aspectFill" />
+				<text v-else class="pc-avatar-text">{{ displayAvatar }}</text>
 			</view>
 			<view class="pc-name-block">
-				<text class="pc-name">{{ userInfo.nickname }}</text>
+				<text class="pc-name">{{ displayName }}</text>
 				<view class="pc-preg-tag">
 					<text class="pc-preg-tag-text">🤰 孕 {{ weekInfo.week }} 周 {{ weekInfo.day }} 天 · {{ trimesterName }}</text>
 				</view>
@@ -48,7 +50,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getTrimesterName } from '@/stores/health.js'
 
 const props = defineProps({
@@ -56,7 +58,8 @@ const props = defineProps({
 	weekInfo: { type: Object, required: true },
 	daysUntilDue: { type: Number, required: true },
 	totalPregDays: { type: Number, required: true },
-	progressPercent: { type: Number, required: true }
+	progressPercent: { type: Number, required: true },
+	isLoggedIn: { type: Boolean, default: false }
 })
 
 const trimesterName = getTrimesterName(getTrimesterFromWeek(props.weekInfo.week))
@@ -68,6 +71,32 @@ function getTrimesterFromWeek(w) {
 }
 
 const statusBarHeight = ref(20)
+
+// 显示名称：已登录显示昵称，未登录显示"点击登录"
+const displayName = computed(() => {
+	if (props.isLoggedIn && props.userInfo.nickname) {
+		return props.userInfo.nickname
+	}
+	return '点击登录'
+})
+
+// 显示头像：判断是 emoji 还是 URL
+const isCustomAvatar = computed(() => {
+	const avatar = props.userInfo.avatar || ''
+	return avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('cloud://')
+})
+
+const displayAvatar = computed(() => {
+	return props.userInfo.avatar || '🌸'
+})
+
+function handleAvatarTap() {
+	if (!props.isLoggedIn) {
+		// 未登录时不做跳转（登录是自动的，此处仅提示）
+		return
+	}
+	uni.navigateTo({ url: '/pages/profile/edit-profile' })
+}
 
 onMounted(() => {
 	const app = getApp()
@@ -107,6 +136,12 @@ onMounted(() => {
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
+	overflow: hidden;
+}
+
+.pc-avatar-img {
+	width: 100%;
+	height: 100%;
 }
 
 .pc-avatar-text {
