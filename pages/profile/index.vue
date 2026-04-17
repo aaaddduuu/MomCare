@@ -8,6 +8,7 @@
 				:daysUntilDue="healthStore.daysUntilDue"
 				:totalPregDays="healthStore.totalPregDays"
 				:progressPercent="healthStore.progressPercent"
+				:isLoggedIn="healthStore.isLoggedIn"
 			/>
 
 			<!-- 倒计时环 -->
