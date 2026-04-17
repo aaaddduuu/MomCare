@@ -54,6 +54,7 @@
           class="check-item"
           :class="{ 'check-item-done': item.done }"
           @tap="toggleItem(item)"
+          @longpress="handleLongPress(item)"
         >
           <!-- Checkbox -->
           <view class="checkbox" :class="{ 'checkbox-checked': item.done }">
@@ -70,6 +71,46 @@
 
       <view class="bottom-spacer"></view>
     </scroll-view>
+
+    <!-- 悬浮添加按钮 -->
+    <view class="fab" @tap="showAddSheet = true">
+      <text class="fab-icon">＋</text>
+    </view>
+
+    <!-- 添加物品弹窗 -->
+    <view v-if="showAddSheet" class="sheet-mask" @tap="showAddSheet = false">
+      <view class="sheet-body" @tap.stop>
+        <text class="sheet-title">添加物品</text>
+        <input
+          class="sheet-input"
+          v-model="newItemText"
+          placeholder="输入物品名称"
+          :focus="showAddSheet"
+          confirm-type="done"
+          @confirm="addItem"
+        />
+        <text class="sheet-label">选择分类</text>
+        <view class="sheet-cats">
+          <view
+            v-for="cat in addCategoryOptions"
+            :key="cat.key"
+            class="sheet-cat-btn"
+            :class="{ 'sheet-cat-btn-active': newItemCategory === cat.key }"
+            @tap="newItemCategory = cat.key"
+          >
+            <text class="sheet-cat-text" :class="{ 'sheet-cat-text-active': newItemCategory === cat.key }">{{ cat.name }}</text>
+          </view>
+        </view>
+        <view class="sheet-actions">
+          <view class="sheet-btn sheet-btn-cancel" @tap="showAddSheet = false">
+            <text class="sheet-btn-text-cancel">取消</text>
+          </view>
+          <view class="sheet-btn sheet-btn-confirm" @tap="addItem">
+            <text class="sheet-btn-text-confirm">添加</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -218,6 +259,52 @@ const filteredSections = computed(() => {
 // Toggle item done state
 function toggleItem(item) {
   item.done = !item.done
+}
+
+// ── 添加物品 ──
+const showAddSheet = ref(false)
+const newItemText = ref('')
+const newItemCategory = ref('other')
+const addCategoryOptions = [
+  { key: 'mom', name: '妈妈用品' },
+  { key: 'baby', name: '宝宝用品' },
+  { key: 'doc', name: '证件资料' },
+  { key: 'other', name: '其他' }
+]
+
+function addItem() {
+  const text = newItemText.value.trim()
+  if (!text) {
+    uni.showToast({ title: '请输入物品名称', icon: 'none' })
+    return
+  }
+  items.value.push({
+    text,
+    done: false,
+    category: newItemCategory.value
+  })
+  newItemText.value = ''
+  showAddSheet.value = false
+  uni.showToast({ title: '已添加', icon: 'success' })
+}
+
+// ── 长按删除 ──
+function handleLongPress(item) {
+  uni.showModal({
+    title: '删除物品',
+    content: `确定删除「${item.text}」吗？`,
+    confirmText: '删除',
+    confirmColor: '#C45070',
+    success: (res) => {
+      if (res.confirm) {
+        const idx = items.value.indexOf(item)
+        if (idx >= 0) {
+          items.value.splice(idx, 1)
+          uni.showToast({ title: '已删除', icon: 'success' })
+        }
+      }
+    }
+  })
 }
 
 // Badge helpers
@@ -494,6 +581,154 @@ function badgeLabel(category) {
 
 /* ── Bottom Spacer ── */
 .bottom-spacer {
-  height: 120rpx;
+  height: 160rpx;
+}
+
+/* ── FAB ── */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 80rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C98A3A, #F0C878);
+  box-shadow: 0 8rpx 32rpx rgba(160, 110, 30, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.fab:active {
+  opacity: 0.85;
+  transform: scale(0.95);
+}
+
+.fab-icon {
+  font-size: 48rpx;
+  font-weight: 300;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+/* ── Sheet Mask ── */
+.sheet-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* ── Sheet Body ── */
+.sheet-body {
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 40rpx 36rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+}
+
+.sheet-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C1A17;
+  margin-bottom: 28rpx;
+}
+
+.sheet-input {
+  width: 100%;
+  height: 88rpx;
+  background: #F2F0EE;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #1C1A17;
+  margin-bottom: 24rpx;
+  box-sizing: border-box;
+}
+
+.sheet-label {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #9C9890;
+  margin-bottom: 16rpx;
+}
+
+.sheet-cats {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+  margin-bottom: 36rpx;
+}
+
+.sheet-cat-btn {
+  height: 64rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  background: #F2F0EE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheet-cat-btn-active {
+  background: #C98A3A;
+}
+
+.sheet-cat-text {
+  font-size: 24rpx;
+  font-weight: 500;
+  color: #6E6A64;
+  white-space: nowrap;
+}
+
+.sheet-cat-text-active {
+  color: #FFFFFF;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.sheet-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sheet-btn-cancel {
+  background: #F2F0EE;
+}
+
+.sheet-btn-confirm {
+  background: linear-gradient(135deg, #C98A3A, #F0C878);
+}
+
+.sheet-btn:active {
+  opacity: 0.85;
+}
+
+.sheet-btn-text-cancel {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #6E6A64;
+}
+
+.sheet-btn-text-confirm {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #FFFFFF;
 }
 </style>
