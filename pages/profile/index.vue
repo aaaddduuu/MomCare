@@ -1,21 +1,20 @@
 <template>
 	<view class="page">
-		<!-- Hero 区域 -->
-		<ProfileHero
-			:userInfo="healthStore.userInfo"
-			:weekInfo="healthStore.todayWeekInfo.value || { week: 0, day: 0, total: 0 }"
-			:daysUntilDue="healthStore.daysUntilDue.value"
-			:totalPregDays="healthStore.totalPregDays.value"
-			:progressPercent="healthStore.progressPercent.value"
-		/>
-
-		<!-- 滚动区域 -->
 		<scroll-view scroll-y class="scroll-content">
+			<!-- Hero 区域 -->
+			<ProfileHero
+				:userInfo="healthStore.userInfo"
+				:weekInfo="healthStore.todayWeekInfo || { week: 0, day: 0, total: 0 }"
+				:daysUntilDue="healthStore.daysUntilDue"
+				:totalPregDays="healthStore.totalPregDays"
+				:progressPercent="healthStore.progressPercent"
+			/>
+
 			<!-- 倒计时环 -->
 			<view class="section-card">
 				<DueCountdownRing
-					:daysUntilDue="healthStore.daysUntilDue.value"
-					:progressPercent="healthStore.progressPercent.value"
+					:daysUntilDue="healthStore.daysUntilDue"
+					:progressPercent="healthStore.progressPercent"
 					:dueDate="healthStore.dueDate"
 				/>
 			</view>
@@ -57,6 +56,7 @@
 <script setup>
 import { ref, computed, reactive } from 'vue'
 import { useHealthStore, getTrimesterName } from '@/stores/health.js'
+import { navigateToPage } from '@/utils/navigation.js'
 import ProfileHero from '@/components/profile/ProfileHero.vue'
 import DueCountdownRing from '@/components/common/DueCountdownRing.vue'
 import ProfileSection from '@/components/profile/ProfileSection.vue'
@@ -100,40 +100,60 @@ const pregInfoItems = computed(() => {
 })
 
 // 我的记录
-const recordItems = computed(() => [
+const recordItems = computed(() => {
+	const ws = healthStore.getWeightStats()
+	const bs = healthStore.getBpStats()
+	const fs = healthStore.getFetalStats()
+
+	const weightSubtitle = ws.count > 0
+		? `最新 ${ws.latest}kg · 孕期增重 ${ws.gain || '--'}kg`
+		: '暂无记录'
+	const weightBadge = ws.count > 0 ? `${ws.count}条` : ''
+
+	const bpSubtitle = bs.count > 0
+		? `最新 ${bs.latest} · 血压${bs.status}`
+		: '暂无记录'
+	const bpBadge = bs.count > 0 ? `${bs.count}条` : ''
+
+	const fetalSubtitle = fs.count > 0
+		? `今日 ${fs.today}次 · 昨日 ${fs.yesterday}次`
+		: '暂无记录'
+	const fetalBadge = fs.count > 0 ? `${fs.count}条` : ''
+
+	return [
 	{
 		icon: '⚖️',
 		iconBg: '#FAEAEE',
 		title: '体重记录',
-		subtitle: '最新 62.5kg · 孕期增重 +8.5kg',
-		badge: '42条',
+		subtitle: weightSubtitle,
+		badge: weightBadge,
 		action: 'weightRecords'
 	},
 	{
 		icon: '💗',
 		iconBg: '#EBF2FB',
 		title: '血压记录',
-		subtitle: '最新 118/76 · 血压正常',
-		badge: '28条',
+		subtitle: bpSubtitle,
+		badge: bpBadge,
 		action: 'bpRecords'
 	},
 	{
 		icon: '👣',
 		iconBg: '#EAF2EE',
 		title: '胎动记录',
-		subtitle: '今日 0次 · 昨日 18次',
-		badge: '56条',
+		subtitle: fetalSubtitle,
+		badge: fetalBadge,
 		action: 'fetalRecords'
 	},
 	{
 		icon: '📁',
 		iconBg: '#FDF3E3',
 		title: '产检档案',
-		subtitle: '共 11 份报告 · 3份 AI 解读中',
-		badge: '11份',
+		subtitle: '暂无报告',
 		action: 'archives'
 	}
-])
+]
+})
 
 // 待办 & 提醒
 const todoItems = computed(() => [
@@ -205,7 +225,7 @@ const settingItems = reactive([
 ])
 
 function handlePregInfoTap(item) {
-	uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
+	navigateToPage('/pages/profile/pregnancy-info')
 }
 
 function handleRecordTap(item) {
@@ -218,7 +238,7 @@ function handleRecordTap(item) {
 	if (item.action === 'archives') {
 		uni.switchTab({ url: routes.archives })
 	} else if (routes[item.action]) {
-		uni.navigateTo({ url: routes[item.action] })
+		navigateToPage(routes[item.action])
 	}
 }
 
@@ -226,10 +246,10 @@ function handleTodoTap(item) {
 	const routes = {
 		nextCheckup: '/pages/profile/checkup-reminder',
 		hospitalBag: '/pages/profile/hospital-bag',
-		dailyPlan: '/pages/profile/checkup-reminder'
+		dailyPlan: '/pages/profile/daily-plan'
 	}
 	if (routes[item.action]) {
-		uni.navigateTo({ url: routes[item.action] })
+		navigateToPage(routes[item.action])
 	}
 }
 
@@ -239,7 +259,7 @@ function handleSettingTap(item) {
 		about: '/pages/profile/about'
 	}
 	if (routes[item.action]) {
-		uni.navigateTo({ url: routes[item.action] })
+		navigateToPage(routes[item.action])
 	}
 }
 

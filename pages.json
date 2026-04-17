@@ -126,6 +126,14 @@
 			}
 		},
 		{
+			"path": "pages/profile/daily-plan",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
 			"path": "pages/profile/privacy",
 			"style": {
 				"navigationStyle": "custom",
