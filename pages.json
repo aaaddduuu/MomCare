@@ -148,6 +148,14 @@
 				"navigationBarTextStyle": "black",
 				"backgroundColor": "#FBF7F2"
 			}
+		},
+		{
+			"path": "pages/profile/edit-profile",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
 		}
 	],
 	"globalStyle": {
