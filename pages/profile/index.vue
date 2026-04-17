@@ -155,6 +155,19 @@ const recordItems = computed(() => {
 ]
 })
 
+// 待产包进度（从本地存储读取）
+const hospitalBagSubtitle = computed(() => {
+	try {
+		const saved = uni.getStorageSync('hospital_bag_items')
+		if (saved) {
+			const items = JSON.parse(saved)
+			const done = items.filter(i => i.done).length
+			return `已完成 ${done} / ${items.length} 项`
+		}
+	} catch (e) {}
+	return '点击查看待产包清单'
+})
+
 // 待办 & 提醒
 const todoItems = computed(() => {
 	const next = healthStore.nextCheckup
@@ -196,7 +209,7 @@ const todoItems = computed(() => {
 			icon: '🎒',
 			iconBg: '#EEE8FA',
 			title: '待产包清单',
-			subtitle: '已完成 12 / 28 项',
+			subtitle: hospitalBagSubtitle,
 			action: 'hospitalBag'
 		},
 		{

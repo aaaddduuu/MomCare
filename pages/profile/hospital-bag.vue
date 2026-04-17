@@ -9,7 +9,7 @@
       <view class="hero-content">
         <text class="hero-label">已完成</text>
         <text class="hero-number">{{ doneCount }} / {{ totalCount }} 项</text>
-        <text class="hero-sub">还剩 {{ totalCount - doneCount }} 项待准备 · 距预产期 54 天</text>
+        <text class="hero-sub">还剩 {{ totalCount - doneCount }} 项待准备 · 距预产期 {{ daysUntilDue }} 天</text>
       </view>
     </view>
 
@@ -74,8 +74,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
+
+const healthStore = useHealthStore()
 
 // Category filter definitions (static keys + names)
 const categoryDefs = [
@@ -88,41 +91,71 @@ const categoryDefs = [
 
 const activeCategory = ref('all')
 
-// Checklist items
-const items = ref([
+// 默认待产包清单模板
+const DEFAULT_ITEMS = [
   // 妈妈用品
   { text: '产妇卫生巾', done: false, category: 'mom' },
-  { text: '哺乳内衣', done: true, category: 'mom' },
+  { text: '哺乳内衣', done: false, category: 'mom' },
   { text: '拖鞋', done: false, category: 'mom' },
   { text: '吸奶器', done: false, category: 'mom' },
   { text: '产后收腹带', done: false, category: 'mom' },
-  { text: '产妇睡衣', done: true, category: 'mom' },
-  { text: '哺乳枕', done: true, category: 'mom' },
+  { text: '产妇睡衣', done: false, category: 'mom' },
+  { text: '哺乳枕', done: false, category: 'mom' },
   { text: '一次性内裤', done: false, category: 'mom' },
-  { text: '洗漱用品', done: true, category: 'mom' },
-  { text: '防溢乳垫', done: true, category: 'mom' },
-  { text: '出院服', done: true, category: 'mom' },
-  { text: '保温杯', done: true, category: 'mom' },
+  { text: '洗漱用品', done: false, category: 'mom' },
+  { text: '防溢乳垫', done: false, category: 'mom' },
+  { text: '出院服', done: false, category: 'mom' },
+  { text: '保温杯', done: false, category: 'mom' },
   // 宝宝用品
   { text: '纸尿裤', done: false, category: 'baby' },
-  { text: '抱被', done: true, category: 'baby' },
+  { text: '抱被', done: false, category: 'baby' },
   { text: '连体爬服', done: false, category: 'baby' },
   { text: '婴儿湿巾', done: false, category: 'baby' },
-  { text: '奶瓶', done: true, category: 'baby' },
-  { text: '婴儿面霜', done: true, category: 'baby' },
+  { text: '奶瓶', done: false, category: 'baby' },
+  { text: '婴儿面霜', done: false, category: 'baby' },
   { text: '口水巾', done: false, category: 'baby' },
   { text: '婴儿帽', done: false, category: 'baby' },
   { text: '包被', done: false, category: 'baby' },
   { text: '婴儿指甲剪', done: false, category: 'baby' },
   // 证件资料
-  { text: '身份证', done: true, category: 'doc' },
-  { text: '健康手册', done: true, category: 'doc' },
+  { text: '身份证', done: false, category: 'doc' },
+  { text: '健康手册', done: false, category: 'doc' },
   { text: '医保卡', done: false, category: 'doc' },
-  { text: '产检记录本', done: true, category: 'doc' },
+  { text: '产检记录本', done: false, category: 'doc' },
   // 其他
   { text: '充电器', done: false, category: 'other' },
   { text: '零食能量棒', done: false, category: 'other' }
-])
+]
+
+// 从本地存储加载，无数据则用默认模板
+function loadItems() {
+  try {
+    const saved = uni.getStorageSync('hospital_bag_items')
+    if (saved) {
+      return JSON.parse(saved)
+    }
+  } catch (e) {
+    console.error('loadItems error:', e)
+  }
+  return DEFAULT_ITEMS.map(i => ({ ...i }))
+}
+
+const items = ref(loadItems())
+
+// 持久化到本地存储
+function saveItems() {
+  try {
+    uni.setStorageSync('hospital_bag_items', JSON.stringify(items.value))
+  } catch (e) {
+    console.error('saveItems error:', e)
+  }
+}
+
+// 监听变化自动保存
+watch(items, saveItems, { deep: true })
+
+// 距预产期天数
+const daysUntilDue = computed(() => healthStore.daysUntilDue)
 
 // Computed stats
 const doneCount = computed(() => items.value.filter(i => i.done).length)
