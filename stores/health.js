@@ -52,6 +52,101 @@ const FRUIT_DATA = {
 	40: { emoji: '🍉', name: '西瓜' }
 }
 
+// 标准产检推荐时间表
+const CHECKUP_TEMPLATES = [
+	{
+		dayOffset: 42,
+		week: 7,
+		label: '孕7周',
+		required: ['早孕B超', '血常规', '尿常规', '血型', '甲状腺功能'],
+		optional: []
+	},
+	{
+		dayOffset: 84,
+		week: 12,
+		label: '孕12周',
+		required: ['NT检查', '早期唐筛', '血常规', '尿常规'],
+		optional: []
+	},
+	{
+		dayOffset: 119,
+		week: 17,
+		label: '孕17周',
+		required: ['中期唐筛', '血常规', '尿常规'],
+		optional: ['无创DNA']
+	},
+	{
+		dayOffset: 147,
+		week: 21,
+		label: '孕21周',
+		required: ['大排畸B超', '血常规', '尿常规'],
+		optional: []
+	},
+	{
+		dayOffset: 182,
+		week: 26,
+		label: '孕26周',
+		required: ['糖耐量试验(OGTT)', '血常规', '尿常规'],
+		optional: []
+	},
+	{
+		dayOffset: 203,
+		week: 29,
+		label: '孕29周',
+		required: ['常规产检', '小排畸B超'],
+		optional: []
+	},
+	{
+		dayOffset: 224,
+		week: 32,
+		label: '孕32周',
+		required: ['胎心监护(NST)', '血常规', '尿常规', 'B超'],
+		optional: []
+	},
+	{
+		dayOffset: 238,
+		week: 34,
+		label: '孕34周',
+		required: ['胎心监护', '常规产检'],
+		optional: []
+	},
+	{
+		dayOffset: 252,
+		week: 36,
+		label: '孕36周',
+		required: ['B超(评估胎位和羊水)', '胎心监护', '血常规'],
+		optional: []
+	},
+	{
+		dayOffset: 259,
+		week: 37,
+		label: '孕37周',
+		required: ['胎心监护', '常规产检', '骨盆测量'],
+		optional: []
+	},
+	{
+		dayOffset: 266,
+		week: 38,
+		label: '孕38周',
+		required: ['胎心监护', '常规产检'],
+		optional: []
+	},
+	{
+		dayOffset: 273,
+		week: 39,
+		label: '孕39周',
+		required: ['胎心监护', 'B超'],
+		optional: []
+	},
+	{
+		dayOffset: 280,
+		week: 40,
+		label: '孕40周',
+		required: ['胎心监护', '常规产检'],
+		optional: []
+	}
+]
+
 export function getFruitComparison(week) {
 	const keys = Object.keys(FRUIT_DATA).map(Number).sort((a, b) => a - b)
 	let result = FRUIT_DATA[4]
@@ -91,6 +186,8 @@ export const useHealthStore = defineStore('health', () => {
 		babyNickname: ''
 	})
 
+	const checkupSchedules = ref([])
+
 	// ── Getters ──
 	const today = computed(() => new Date())
 
@@ -118,6 +215,27 @@ export const useHealthStore = defineStore('health', () => {
 	const fruitComparison = computed(() => {
 		if (!todayWeekInfo.value) return { emoji: '🫘', name: '种子' }
 		return getFruitComparison(todayWeekInfo.value.week)
+	})
+
+	// ── 产检日程 Getters ──
+
+	const nextCheckup = computed(() => {
+		const todayStr = getRecordKey(new Date())
+		return checkupSchedules.value
+			.filter(s => s.status === 'upcoming' && s.checkup_date >= todayStr)
+			.sort((a, b) => a.checkup_date.localeCompare(b.checkup_date))[0] || null
+	})
+
+	const completedCheckups = computed(() => {
+		return checkupSchedules.value
+			.filter(s => s.status === 'completed')
+			.sort((a, b) => b.checkup_date.localeCompare(a.checkup_date))
+	})
+
+	const upcomingCheckups = computed(() => {
+		return checkupSchedules.value
+			.filter(s => s.status === 'upcoming')
+			.sort((a, b) => a.checkup_date.localeCompare(b.checkup_date))
 	})
 
 	function getRecordKey(date) {
@@ -439,6 +557,111 @@ export const useHealthStore = defineStore('health', () => {
 		}
 	}
 
+	// ── 产检日程 ──
+
+	function _templateToSchedule(template, lmpDateVal, hospitalDefault) {
+		const date = new Date(lmpDateVal.getTime() + template.dayOffset * 86400000)
+		const dateKey = getRecordKey(date)
+		const examItems = [
+			...template.required.map(text => ({ text, required: true, done: false })),
+			...template.optional.map(text => ({ text, required: false, done: false }))
+		]
+		return {
+			checkup_date: dateKey,
+			week_of_pregnancy: template.week,
+			week_label: template.label,
+			hospital: hospitalDefault || '',
+			department: '产科门诊',
+			time_slot: 'morning',
+			status: dateKey < getRecordKey(new Date()) ? 'completed' : 'upcoming',
+			exam_items: examItems,
+			notes: '',
+			remind_days_before: [1, 3]
+		}
+	}
+
+	async function loadCheckupSchedules() {
+		try {
+			const db = getDb()
+			const res = await db.collection('checkup_schedules')
+				.where('user_id == $env.UID')
+				.orderBy('checkup_date', 'asc')
+				.limit(100)
+				.get()
+
+			if (res.result && res.result.data && res.result.data.length > 0) {
+				checkupSchedules.value = res.result.data
+				console.log('loadCheckupSchedules: 从云端加载', res.result.data.length, '条')
+			} else {
+				checkupSchedules.value = []
+			}
+		} catch (e) {
+			console.error('loadCheckupSchedules 云端加载失败:', e)
+			checkupSchedules.value = []
+		}
+	}
+
+	async function initCheckupSchedules() {
+		try {
+			const db = getDb()
+			const { uid: userId } = uniCloud.getCurrentUserInfo()
+			if (!userId) {
+				console.warn('initCheckupSchedules: 未登录')
+				return
+			}
+
+			const hospitalDefault = userInfo.value.hospital || ''
+			const newSchedules = CHECKUP_TEMPLATES.map(template =>
+				_templateToSchedule(template, lmpDate.value, hospitalDefault)
+			)
+
+			// 批量写入云端
+			for (const schedule of newSchedules) {
+				await db.collection('checkup_schedules').add({
+					...schedule,
+					user_id: userId
+				})
+			}
+
+			checkupSchedules.value = newSchedules
+			console.log('initCheckupSchedules: 已生成', newSchedules.length, '条产检日程')
+		} catch (e) {
+			console.error('initCheckupSchedules 失败:', e)
+		}
+	}
+
+	async function updateCheckupSchedule(scheduleId, data) {
+		// 本地更新
+		const idx = checkupSchedules.value.findIndex(s => s._id === scheduleId)
+		if (idx >= 0) {
+			checkupSchedules.value[idx] = { ...checkupSchedules.value[idx], ...data }
+		}
+
+		// 云端更新
+		try {
+			const db = getDb()
+			await db.collection('checkup_schedules')
+				.doc(scheduleId)
+				.update({ ...data, update_time: dateToCloudDate(new Date()) })
+			console.log('updateCheckupSchedule: 云端更新成功')
+		} catch (e) {
+			console.error('updateCheckupSchedule 云端更新失败:', e)
+		}
+	}
+
+	async function toggleExamItem(scheduleId, itemIdx) {
+		const schedule = checkupSchedules.value.find(s => s._id === scheduleId)
+		if (!schedule) return
+
+		const items = [...schedule.exam_items]
+		items[itemIdx].done = !items[itemIdx].done
+		await updateCheckupSchedule(scheduleId, { exam_items: items })
+	}
+
+	async function markCheckupCompleted(scheduleId) {
+		await updateCheckupSchedule(scheduleId, { status: 'completed' })
+	}
+
 	// ── 统计方法 ──
 
 	function getWeightStats() {
@@ -683,6 +906,16 @@ export const useHealthStore = defineStore('health', () => {
 		// actions
 		loadRecords,
 		saveRecord,
+		// checkup schedules
+		checkupSchedules,
+		nextCheckup,
+		completedCheckups,
+		upcomingCheckups,
+		loadCheckupSchedules,
+		initCheckupSchedules,
+		updateCheckupSchedule,
+		toggleExamItem,
+		markCheckupCompleted,
 		// statistics
 		getWeightStats,
 		getBpStats,

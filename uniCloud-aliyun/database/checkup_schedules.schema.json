@@ -1,0 +1,90 @@
+{
+	"bsonType": "object",
+	"required": ["user_id", "checkup_date", "week_of_pregnancy"],
+	"permission": {
+		"read": "doc.user_id == auth.uid",
+		"create": "doc.user_id == auth.uid",
+		"update": "doc.user_id == auth.uid",
+		"delete": "doc.user_id == auth.uid"
+	},
+	"properties": {
+		"_id": {
+			"description": "记录唯一标识"
+		},
+		"user_id": {
+			"bsonType": "string",
+			"description": "用户ID",
+			"foreignKey": "mom_users._id"
+		},
+		"checkup_date": {
+			"bsonType": "string",
+			"description": "产检日期 YYYY-MM-DD",
+			"title": "产检日期"
+		},
+		"week_of_pregnancy": {
+			"bsonType": "int",
+			"description": "计划孕周",
+			"title": "孕周"
+		},
+		"week_label": {
+			"bsonType": "string",
+			"description": "孕周标签（如 孕7周、孕32周）",
+			"title": "孕周标签"
+		},
+		"hospital": {
+			"bsonType": "string",
+			"description": "医院（为空时取userInfo默认值）",
+			"title": "医院"
+		},
+		"department": {
+			"bsonType": "string",
+			"description": "科室",
+			"title": "科室",
+			"defaultValue": "产科门诊"
+		},
+		"time_slot": {
+			"bsonType": "string",
+			"description": "时段",
+			"title": "时段",
+			"enum": ["morning", "afternoon", ""]
+		},
+		"status": {
+			"bsonType": "string",
+			"description": "状态",
+			"title": "状态",
+			"enum": ["upcoming", "completed", "skipped"],
+			"defaultValue": "upcoming"
+		},
+		"exam_items": {
+			"bsonType": "array",
+			"description": "检查项目列表",
+			"title": "检查项目",
+			"arrayType": "object"
+		},
+		"notes": {
+			"bsonType": "string",
+			"description": "备注",
+			"title": "备注",
+			"maxLength": 500
+		},
+		"remind_days_before": {
+			"bsonType": "array",
+			"description": "提前几天提醒",
+			"title": "提醒天数",
+			"arrayType": "int"
+		},
+		"create_time": {
+			"bsonType": "timestamp",
+			"description": "创建时间",
+			"title": "创建时间",
+			"forceDefaultValue": {
+				"$env": "now"
+			}
+		},
+		"update_time": {
+			"bsonType": "timestamp",
+			"description": "更新时间",
+			"title": "更新时间"
+		}
+	}
+}

@@ -4,67 +4,92 @@
 		<view class="hero-rose">
 			<NavBar title="产检提醒" theme="dark" :showBack="true" class="hero-navbar" />
 			<view class="hero-content">
-				<text class="hero-label">下次产检日期</text>
-				<text class="hero-date">4月20日</text>
-				<text class="hero-sub">周日 · 上午 09:30 · 北京协和医院 · 产科门诊</text>
-				<view class="countdown-pill">
-					<text class="countdown-num">7</text>
-					<text class="countdown-lbl">天后</text>
-				</view>
+				<template v-if="nextCheckup">
+					<text class="hero-label">下次产检日期</text>
+					<text class="hero-date">{{ heroDate }}</text>
+					<text class="hero-sub">{{ heroSub }}</text>
+					<view class="countdown-pill">
+						<text class="countdown-num">{{ daysUntil }}</text>
+						<text class="countdown-lbl">天后</text>
+					</view>
+				</template>
+				<template v-else>
+					<text class="hero-label">产检安排</text>
+					<text class="hero-date">已全部完成</text>
+					<text class="hero-sub">所有产检日程已完成，祝您一切顺利</text>
+				</template>
 			</view>
 		</view>
 
 		<scroll-view scroll-y class="scroll-content">
-			<!-- 产检信息卡片 -->
-			<view class="info-card">
-				<text class="info-title">本次产检信息</text>
-				<view class="info-row">
-					<text class="info-icon">📅</text>
-					<text class="info-text">2025年4月20日（周日）上午 09:30</text>
-				</view>
-				<view class="info-row">
-					<text class="info-icon">🏥</text>
-					<text class="info-text">北京协和医院 · 产科门诊 6楼 B区</text>
-				</view>
-				<view class="info-row">
-					<text class="info-icon">👩‍⚕️</text>
-					<text class="info-text">当时孕周：孕 33 周 3 天</text>
-				</view>
+			<!-- 无数据时初始化提示 -->
+			<view v-if="loading" class="loading-container">
+				<view class="loading-spinner"></view>
+				<text class="loading-text">加载中...</text>
 			</view>
 
-			<!-- 检查项目清单 -->
-			<text class="section-title">本次需要做的检查</text>
-			<view class="exam-list">
-				<view
-					v-for="(item, idx) in examItems"
-					:key="idx"
-					class="exam-item"
-					:class="{ 'exam-checked': item.done }"
-					@tap="item.done = !item.done"
-				>
-					<view class="exam-check">
-						<text v-if="item.done" class="check-mark">✓</text>
+			<template v-else-if="nextCheckup">
+				<!-- 产检信息卡片 -->
+				<view class="info-card">
+					<text class="info-title">本次产检信息</text>
+					<view class="info-row">
+						<text class="info-icon">📅</text>
+						<text class="info-text">{{ infoDate }}</text>
 					</view>
-					<text class="exam-text" :class="{ 'exam-text-done': item.done }">{{ item.text }}</text>
-					<view class="exam-tag" :class="item.required ? 'tag-req' : 'tag-opt'">
-						<text class="exam-tag-text">{{ item.required ? '必查' : '选查' }}</text>
+					<view class="info-row">
+						<text class="info-icon">🏥</text>
+						<text class="info-text">{{ infoHospital }}</text>
+					</view>
+					<view class="info-row">
+						<text class="info-icon">👩‍⚕️</text>
+						<text class="info-text">预计孕周：{{ nextCheckup.week_label }}</text>
 					</view>
 				</view>
-			</view>
 
-			<!-- 提醒设置 -->
-			<text class="section-title">提醒设置</text>
-			<view class="notif-card">
-				<view v-for="(n, idx) in notifItems" :key="idx" class="notif-row">
-					<view class="notif-text">
-						<text class="notif-title">{{ n.title }}</text>
-						<text class="notif-sub">{{ n.subtitle }}</text>
-					</view>
-					<view class="toggle" :class="{ 'toggle-on': n.on }" @tap="n.on = !n.on">
-						<view class="toggle-thumb" :class="{ 'thumb-on': n.on }"></view>
+				<!-- 检查项目清单 -->
+				<text class="section-title">本次需要做的检查</text>
+				<view class="exam-list">
+					<view
+						v-for="(item, idx) in nextCheckup.exam_items"
+						:key="idx"
+						class="exam-item"
+						:class="{ 'exam-checked': item.done }"
+						@tap="handleToggleItem(idx)"
+					>
+						<view class="exam-check">
+							<text v-if="item.done" class="check-mark">✓</text>
+						</view>
+						<text class="exam-text" :class="{ 'exam-text-done': item.done }">{{ item.text }}</text>
+						<view class="exam-tag" :class="item.required ? 'tag-req' : 'tag-opt'">
+							<text class="exam-tag-text">{{ item.required ? '必查' : '选查' }}</text>
+						</view>
 					</view>
 				</view>
-			</view>
+			</template>
+
+			<!-- 历史产检记录 -->
+			<template v-if="completedCheckups.length > 0">
+				<text class="section-title">历史产检记录</text>
+				<view class="history-list">
+					<view
+						v-for="(item, idx) in completedCheckups"
+						:key="'h-' + idx"
+						class="history-item"
+					>
+						<view class="history-left">
+							<view class="history-dot"></view>
+							<view class="history-info">
+								<text class="history-date">{{ formatHistoryDate(item.checkup_date) }}</text>
+								<text class="history-week">{{ item.week_label }}</text>
+							</view>
+						</view>
+						<view class="history-right">
+							<text class="history-done-count">{{ countDoneItems(item) }}/{{ item.exam_items.length }}</text>
+							<text class="history-done-label">项已完成</text>
+						</view>
+					</view>
+				</view>
+			</template>
 
 			<view class="bottom-spacer"></view>
 		</scroll-view>
@@ -72,22 +97,88 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useHealthStore, calcWeekInfo } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
-const examItems = reactive([
-	{ text: '常规产检（宫高、腹围、胎心）', required: true, done: true },
-	{ text: '血常规检查', required: true, done: true },
-	{ text: '胎心监护（NST）', required: true, done: false },
-	{ text: 'B超（评估胎位和羊水）', required: false, done: false },
-	{ text: '尿常规', required: true, done: false }
-])
+const healthStore = useHealthStore()
+const loading = ref(true)
 
-const notifItems = reactive([
-	{ title: '提前1天提醒', subtitle: '4月19日 09:30 推送通知', on: true },
-	{ title: '提前3天提醒', subtitle: '4月17日 09:30 推送通知', on: true },
-	{ title: '当天早晨提醒', subtitle: '4月20日 08:00 推送通知', on: false }
-])
+// 下一次产检
+const nextCheckup = computed(() => healthStore.nextCheckup)
+const completedCheckups = computed(() => healthStore.completedCheckups)
+
+// Hero 区域数据
+const heroDate = computed(() => {
+	if (!nextCheckup.value) return ''
+	const d = new Date(nextCheckup.value.checkup_date)
+	return `${d.getMonth() + 1}月${d.getDate()}日`
+})
+
+const heroSub = computed(() => {
+	if (!nextCheckup.value) return ''
+	const c = nextCheckup.value
+	const d = new Date(c.checkup_date)
+	const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+	const timeLabel = c.time_slot === 'morning' ? '上午' : c.time_slot === 'afternoon' ? '下午' : ''
+	let sub = weekDays[d.getDay()]
+	if (timeLabel) sub += ` · ${timeLabel}`
+	if (c.hospital) sub += ` · ${c.hospital}`
+	if (c.department) sub += ` · ${c.department}`
+	return sub
+})
+
+const daysUntil = computed(() => {
+	if (!nextCheckup.value) return 0
+	const target = new Date(nextCheckup.value.checkup_date)
+	const today = new Date()
+	const diff = Math.ceil((target - today) / 86400000)
+	return Math.max(0, diff)
+})
+
+// 产检信息卡片数据
+const infoDate = computed(() => {
+	if (!nextCheckup.value) return ''
+	const c = nextCheckup.value
+	const d = new Date(c.checkup_date)
+	const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+	const timeLabel = c.time_slot === 'morning' ? '上午 09:30' : c.time_slot === 'afternoon' ? '下午 14:00' : ''
+	return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${weekDays[d.getDay()]}）${timeLabel}`
+})
+
+const infoHospital = computed(() => {
+	if (!nextCheckup.value) return ''
+	const c = nextCheckup.value
+	let text = c.hospital || healthStore.userInfo.hospital || '未设置医院'
+	if (c.department) text += ` · ${c.department}`
+	return text
+})
+
+// 交互
+function handleToggleItem(itemIdx) {
+	if (!nextCheckup.value || !nextCheckup.value._id) return
+	healthStore.toggleExamItem(nextCheckup.value._id, itemIdx)
+}
+
+function formatHistoryDate(dateStr) {
+	if (!dateStr) return ''
+	const d = new Date(dateStr)
+	return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+}
+
+function countDoneItems(schedule) {
+	if (!schedule.exam_items) return 0
+	return schedule.exam_items.filter(i => i.done).length
+}
+
+// 加载数据
+onMounted(async () => {
+	await healthStore.loadCheckupSchedules()
+	if (healthStore.checkupSchedules.length === 0) {
+		await healthStore.initCheckupSchedules()
+	}
+	loading.value = false
+})
 </script>
 
 <style scoped lang="scss">
@@ -166,6 +257,33 @@ const notifItems = reactive([
 
 .scroll-content { flex: 1; }
 
+.loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 120rpx 0;
+}
+
+.loading-spinner {
+	width: 48rpx;
+	height: 48rpx;
+	border: 4rpx solid #E4E1DC;
+	border-top-color: #C45070;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	margin-bottom: 16rpx;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.loading-text {
+	font-size: 26rpx;
+	color: #9C9890;
+}
+
 .info-card {
 	background: #FFFFFF;
 	border-radius: 32rpx;
@@ -226,6 +344,11 @@ const notifItems = reactive([
 	gap: 20rpx;
 }
 
+.exam-item:active {
+	opacity: 0.85;
+	transform: scale(0.98);
+}
+
 .exam-check {
 	width: 40rpx;
 	height: 40rpx;
@@ -266,11 +389,8 @@ const notifItems = reactive([
 }
 
 .tag-req { background: #FAEAEE; }
-
 .tag-req .exam-tag-text { color: #B04560; }
-
 .tag-opt { background: #F2F0EE; }
-
 .tag-opt .exam-tag-text { color: #9C9890; }
 
 .exam-tag-text {
@@ -278,63 +398,69 @@ const notifItems = reactive([
 	font-weight: 600;
 }
 
-.notif-card {
-	background: #FFFFFF;
-	border-radius: 32rpx;
-	box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
-	overflow: hidden;
-	margin: 0 28rpx;
+/* ── 历史记录 ── */
+.history-list {
+	padding: 0 28rpx;
 }
 
-.notif-row {
+.history-item {
+	background: #FFFFFF;
+	border-radius: 20rpx;
+	box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
+	padding: 24rpx 26rpx;
+	margin-bottom: 16rpx;
 	display: flex;
 	align-items: center;
-	padding: 24rpx 28rpx;
-	border-bottom: 1rpx solid #E8DDD0;
+	justify-content: space-between;
 }
 
-.notif-row:last-child { border-bottom: none; }
+.history-left {
+	display: flex;
+	align-items: center;
+	gap: 20rpx;
+}
 
-.notif-text { flex: 1; }
+.history-dot {
+	width: 20rpx;
+	height: 20rpx;
+	border-radius: 50%;
+	background: #7BA08C;
+	flex-shrink: 0;
+}
 
-.notif-title {
-	display: block;
+.history-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4rpx;
+}
+
+.history-date {
 	font-size: 28rpx;
-	font-weight: 500;
+	font-weight: 600;
 	color: #1C1A17;
 }
 
-.notif-sub {
-	display: block;
+.history-week {
 	font-size: 22rpx;
 	color: #9C9890;
-	margin-top: 2rpx;
 }
 
-.toggle {
-	width: 76rpx;
-	height: 42rpx;
-	border-radius: 21rpx;
-	background: #E4E1DC;
-	position: relative;
-	transition: background 0.2s;
+.history-right {
+	display: flex;
+	align-items: center;
+	gap: 4rpx;
 }
 
-.toggle-on { background: #D4627A; }
-
-.toggle-thumb {
-	position: absolute;
-	top: 5rpx;
-	left: 5rpx;
-	width: 32rpx;
-	height: 32rpx;
-	border-radius: 50%;
-	background: #FFFFFF;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
-	transition: transform 0.2s;
+.history-done-count {
+	font-size: 28rpx;
+	font-weight: 700;
+	color: #7BA08C;
 }
 
-.thumb-on { transform: translateX(34rpx); }
+.history-done-label {
+	font-size: 22rpx;
+	color: #9C9890;
+}
 
 .bottom-spacer { height: 40rpx; }
 </style>

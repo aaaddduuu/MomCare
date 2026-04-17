@@ -156,31 +156,58 @@ const recordItems = computed(() => {
 })
 
 // 待办 & 提醒
-const todoItems = computed(() => [
-	{
-		icon: '🗓',
-		iconBg: '#FAEAEE',
-		title: '下次产检',
-		subtitle: '4月20日 · 还有 7 天',
-		badge: '7天后',
-		badgeStyle: 'amber',
-		action: 'nextCheckup'
-	},
-	{
-		icon: '🎒',
-		iconBg: '#EEE8FA',
-		title: '待产包清单',
-		subtitle: '已完成 12 / 28 项',
-		action: 'hospitalBag'
-	},
-	{
-		icon: '📋',
-		iconBg: '#EAF7EF',
-		title: '今日计划',
-		subtitle: '产检 · 练习呼吸法 · 整理报告',
-		action: 'dailyPlan'
+const todoItems = computed(() => {
+	const next = healthStore.nextCheckup
+	let checkupSubtitle = '暂无产检安排'
+	let checkupBadge = ''
+	let checkupBadgeStyle = ''
+	if (next) {
+		const d = new Date(next.checkup_date)
+		const todayDate = new Date()
+		const days = Math.ceil((d - todayDate) / 86400000)
+		const m = d.getMonth() + 1
+		const day = d.getDate()
+		if (days > 0) {
+			checkupSubtitle = `${m}月${day}日 · 还有 ${days} 天`
+			checkupBadge = days + '天后'
+			checkupBadgeStyle = 'amber'
+		} else if (days === 0) {
+			checkupSubtitle = `${m}月${day}日 · 就是今天`
+			checkupBadge = '今天'
+			checkupBadgeStyle = 'rose'
+		} else {
+			checkupSubtitle = `${m}月${day}日 · 已过期`
+			checkupBadge = '已过期'
+			checkupBadgeStyle = 'gray'
+		}
 	}
-])
+
+	return [
+		{
+			icon: '🗓',
+			iconBg: '#FAEAEE',
+			title: '下次产检',
+			subtitle: checkupSubtitle,
+			badge: checkupBadge,
+			badgeStyle: checkupBadgeStyle,
+			action: 'nextCheckup'
+		},
+		{
+			icon: '🎒',
+			iconBg: '#EEE8FA',
+			title: '待产包清单',
+			subtitle: '已完成 12 / 28 项',
+			action: 'hospitalBag'
+		},
+		{
+			icon: '📋',
+			iconBg: '#EAF7EF',
+			title: '今日计划',
+			subtitle: '产检 · 练习呼吸法 · 整理报告',
+			action: 'dailyPlan'
+		}
+	]
+})
 
 // 设置（含开关状态）
 const settingItems = reactive([
@@ -266,6 +293,13 @@ function handleSettingTap(item) {
 function handleToggle(idx) {
 	settingItems[idx].toggle = !settingItems[idx].toggle
 }
+
+// 加载产检日程（用于首页卡片显示）
+healthStore.loadCheckupSchedules().then(() => {
+	if (healthStore.checkupSchedules.length === 0) {
+		healthStore.initCheckupSchedules()
+	}
+})
 </script>
 
 <style scoped lang="scss">
