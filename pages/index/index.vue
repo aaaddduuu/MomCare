@@ -19,42 +19,45 @@
 				@tapAvatar="goProfile"
 			/>
 
-			<!-- 每日变化卡片 -->
-			<DailyChanges
-				:weekInfo="healthStore.todayWeekInfo"
-				:selectedDate="selectedDate"
-				:healthStore="healthStore"
-			/>
+			<template v-if="healthStore.pregInfoSet">
+				<!-- 每日变化卡片 -->
+				<DailyChanges
+					:weekInfo="healthStore.todayWeekInfo"
+					:selectedDate="selectedDate"
+					:healthStore="healthStore"
+				/>
 
-			<!-- 本周指南卡片 -->
-			<WeeklyGuideCard
-				:weekInfo="healthStore.todayWeekInfo || { week: 0, day: 0, total: 0 }"
-				:daysUntilDue="healthStore.daysUntilDue"
-				@tapCard="goWeeklyGuide"
-			/>
+				<!-- 本周指南卡片 -->
+				<WeeklyGuideCard
+					:weekInfo="healthStore.todayWeekInfo || { week: 0, day: 0, total: 0 }"
+					:daysUntilDue="healthStore.daysUntilDue"
+					@tapCard="goWeeklyGuide"
+				/>
 
-			<!-- 孕期日历 -->
-			<PregnancyCalendar
-				:lmpDate="healthStore.lmpDate"
-				:dueDate="healthStore.dueDate"
-				:hasRecord="healthStore.hasRecord"
-				:selectedDate="selectedDate"
-				@selectDate="onSelectDate"
-			/>
+				<!-- 孕期日历 -->
+				<PregnancyCalendar
+					:lmpDate="healthStore.lmpDate"
+					:dueDate="healthStore.dueDate"
+					:hasRecord="healthStore.hasRecord"
+					:selectedDate="selectedDate"
+					@selectDate="onSelectDate"
+				/>
 
-			<!-- 每日记录面板 -->
-			<DayRecordPanel
-				:selectedDate="selectedDate"
-				:record="currentRecord"
-				:lmpDate="healthStore.lmpDate"
-				@edit="openEdit"
-			/>
+				<!-- 每日记录面板 -->
+				<DayRecordPanel
+					:selectedDate="selectedDate"
+					:record="currentRecord"
+					:lmpDate="healthStore.lmpDate"
+					@edit="openEdit"
+				/>
+			</template>
 
 			<view class="bottom-spacer"></view>
 		</scroll-view>
 
 		<!-- 记录编辑弹窗 -->
 		<RecordEditSheet
+			v-if="healthStore.pregInfoSet"
 			:visible="editVisible"
 			:mode="editMode"
 			:record="currentRecord"

@@ -38,8 +38,8 @@
       <view class="setup-content">
         <text class="setup-icon">📝</text>
         <view class="setup-text-wrap">
-          <text class="setup-title">设置您的孕期信息</text>
-          <text class="setup-desc">填写末次月经日期，开始记录孕期旅程</text>
+          <text class="setup-title">欢迎使用孕途伴侣</text>
+          <text class="setup-desc">前往「我的」填写孕期信息，开启专属孕期旅程</text>
         </view>
         <text class="setup-arrow">›</text>
       </view>
@@ -98,7 +98,7 @@ function handleTapAvatar() {
 }
 
 function goSetup() {
-  uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
+  uni.switchTab({ url: '/pages/profile/index' })
 }
 </script>
 
