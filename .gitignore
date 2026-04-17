@@ -12,3 +12,13 @@ openspec/
 # Environment variables - NEVER commit real API keys
 .env
 **/.env
+
+# Cloud functions and sensitive configurations
+uniCloud-aliyun/
+
+# Design and documentation files
+DESIGN.md
+PRD.md
+
+# App configuration
+manifest.json
