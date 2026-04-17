@@ -187,6 +187,9 @@ export const useHealthStore = defineStore('health', () => {
 	})
 
 	const checkupSchedules = ref([])
+	// ── 登录状态 ──
+	const isLoggedIn = ref(false)
+	const openid = ref('')
 
 	// ── Getters ──
 	const today = computed(() => new Date())
@@ -878,6 +881,139 @@ export const useHealthStore = defineStore('health', () => {
 		return `晚上好，${name}`
 	}
 
+	// ── 微信静默登录 ──
+
+	async function silentLogin() {
+		try {
+			// 1. 调用 uni.login 获取微信临时 code
+			const loginRes = await new Promise((resolve, reject) => {
+				uni.login({
+					provider: 'weixin',
+					success: resolve,
+					fail: reject
+				})
+			})
+
+			if (!loginRes.code) {
+				console.warn('silentLogin: uni.login 未返回 code')
+				return false
+			}
+
+			// 2. 调用云函数换取 openid
+			const cloudRes = await uniCloud.callFunction({
+				name: 'wxLogin',
+				data: { code: loginRes.code }
+			})
+
+			if (!cloudRes.result || cloudRes.result.code !== 200) {
+				console.warn('silentLogin: 云函数返回错误', cloudRes.result)
+				return false
+			}
+
+			const { openid: wxOpenid, userInfo: wxUserInfo, isNewUser } = cloudRes.result.data
+
+			// 3. 更新 store 状态
+			openid.value = wxOpenid
+			isLoggedIn.value = true
+
+			// 4. 更新 userInfo（云端数据优先）
+			if (wxUserInfo) {
+				if (wxUserInfo.nickname) userInfo.value.nickname = wxUserInfo.nickname
+				if (wxUserInfo.avatar) userInfo.value.avatar = wxUserInfo.avatar
+				if (wxUserInfo.hospital) userInfo.value.hospital = wxUserInfo.hospital
+				if (wxUserInfo.babyNickname) userInfo.value.babyNickname = wxUserInfo.babyNickname
+				if (wxUserInfo.doctor) userInfo.value.doctor = wxUserInfo.doctor
+				if (wxUserInfo.hospitalPhone) userInfo.value.hospitalPhone = wxUserInfo.hospitalPhone
+				if (wxUserInfo.preWeight) userInfo.value.preWeight = wxUserInfo.preWeight
+				if (wxUserInfo.height) userInfo.value.height = wxUserInfo.height
+				if (wxUserInfo.lmpDate) lmpDate.value = cloudDateToLocal(wxUserInfo.lmpDate)
+				if (wxUserInfo.dueDate) dueDate.value = cloudDateToLocal(wxUserInfo.dueDate)
+			}
+
+			userProfileLoaded.value = true
+
+			// 5. 如果是新用户且有本地数据，触发迁移
+			if (isNewUser) {
+				_migrateLocalData(wxOpenid)
+			}
+
+			console.log('silentLogin: 登录成功', wxOpenid)
+			return true
+		} catch (e) {
+			console.warn('silentLogin: 登录失败，降级为本地模式', e.message)
+			return false
+		}
+	}
+
+	// ── 本地数据迁移到云端 ──
+
+	async function _migrateLocalData(targetOpenid) {
+		// 检查是否已迁移
+		const migrated = uni.getStorageSync('data_migrated')
+		if (migrated) return
+
+		try {
+			// 迁移 user_profile → mom_users（合并到已有记录）
+			const savedProfile = uni.getStorageSync('user_profile')
+			if (savedProfile) {
+				const localData = JSON.parse(savedProfile)
+				const db = getDb()
+				const updateData = {}
+
+				if (localData.userInfo) {
+					if (localData.userInfo.nickname && localData.userInfo.nickname !== '宝妈') {
+						updateData.nickname = localData.userInfo.nickname
+						userInfo.value.nickname = localData.userInfo.nickname
+					}
+					if (localData.userInfo.hospital) updateData.hospital = localData.userInfo.hospital
+					if (localData.userInfo.babyNickname) updateData.baby_nickname = localData.userInfo.babyNickname
+				}
+				if (localData.lmpDate) {
+					updateData.lmp_date = new Date(localData.lmpDate)
+				}
+				if (localData.dueDate) {
+					updateData.due_date = new Date(localData.dueDate)
+				}
+
+				if (Object.keys(updateData).length > 0) {
+					await db.collection('mom_users')
+						.where({ openid: targetOpenid })
+						.update(updateData)
+				}
+			}
+
+			// 迁移 health_records
+			const savedRecords = uni.getStorageSync('health_records')
+			if (savedRecords) {
+				const localRecords = JSON.parse(savedRecords)
+				const db = getDb()
+				let migratedCount = 0
+
+				for (const [dateKey, dayRecord] of Object.entries(localRecords)) {
+					const cloudRecords = recordsToCloud(dateKey, dayRecord)
+					for (const record of cloudRecords) {
+						try {
+							await db.collection('health_records').add({
+								...record,
+								openid: targetOpenid
+							})
+							migratedCount++
+						} catch (e) {
+							console.warn('_migrateLocalData: 迁移单条记录失败', dateKey, e.message)
+						}
+					}
+				}
+				console.log(`_migrateLocalData: 迁移了 ${migratedCount} 条健康记录`)
+			}
+
+			// 标记迁移完成
+			uni.setStorageSync('data_migrated', 'true')
+			console.log('_migrateLocalData: 数据迁移完成')
+		} catch (e) {
+			console.error('_migrateLocalData: 迁移失败', e.message)
+		}
+	}
+
 	return {
 		// state
 		lmpDate,
@@ -926,6 +1062,10 @@ export const useHealthStore = defineStore('health', () => {
 		getBpHistory,
 		getFetalHistory,
 		// greeting
-		getGreeting
+		getGreeting,
+		// login
+		isLoggedIn,
+		openid,
+		silentLogin
 	}
 })
