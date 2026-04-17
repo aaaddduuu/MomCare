@@ -603,28 +603,30 @@ export const useHealthStore = defineStore('health', () => {
 
 	async function initCheckupSchedules() {
 		try {
-			const db = getDb()
-			const { uid: userId } = uniCloud.getCurrentUserInfo()
-			if (!userId) {
-				console.warn('initCheckupSchedules: 未登录')
-				return
-			}
-
 			const hospitalDefault = userInfo.value.hospital || ''
 			const newSchedules = CHECKUP_TEMPLATES.map(template =>
 				_templateToSchedule(template, lmpDate.value, hospitalDefault)
 			)
 
-			// 批量写入云端
+			// 先本地展示
+			checkupSchedules.value = newSchedules
+			console.log('initCheckupSchedules: 已生成', newSchedules.length, '条产检日程')
+
+			// 尝试写入云端（未登录时跳过）
+			const { uid: userId } = uniCloud.getCurrentUserInfo()
+			if (!userId) {
+				console.warn('initCheckupSchedules: 未登录，仅本地展示')
+				return
+			}
+
+			const db = getDb()
 			for (const schedule of newSchedules) {
 				await db.collection('checkup_schedules').add({
 					...schedule,
 					user_id: userId
 				})
 			}
-
-			checkupSchedules.value = newSchedules
-			console.log('initCheckupSchedules: 已生成', newSchedules.length, '条产检日程')
+			console.log('initCheckupSchedules: 云端同步成功')
 		} catch (e) {
 			console.error('initCheckupSchedules 失败:', e)
 		}
