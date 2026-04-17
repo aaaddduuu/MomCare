@@ -88,6 +88,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { navigateToPage } from '@/utils/navigation.js'
 import NavBar from '@/components/NavBar.vue'
 import { useReportStore, getTypeInfo } from '@/stores/report'
 
@@ -145,7 +146,7 @@ function onClassifyTap(item) {
   if (item.file_urls) {
     params.push(`fileUrls=${encodeURIComponent(JSON.stringify(item.file_urls))}`)
   }
-  uni.navigateTo({ url: `/pages/archives/classify?${params.join('&')}` })
+  navigateToPage(`/pages/archives/classify?${params.join('&')}`)
 }
 
 function onArchiveAll() {

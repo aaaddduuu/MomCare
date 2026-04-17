@@ -186,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, nextTick } from 'vue'
 import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
@@ -231,13 +231,19 @@ onMounted(() => {
 	form.preWeight = userInfo.preWeight || ''
 	form.height = userInfo.height || ''
 
-	const lmp = healthStore.lmpDate
-	lmpDateStr.value = formatDate(lmp)
+	// 只在首次有体重和身高时计算BMI
+	if (form.preWeight && form.height) {
+		calcBMI()
+	}
 
-	const due = healthStore.dueDate
-	dueDateStr.value = formatDate(due)
+	// 延迟日期格式化，避免阻塞首屏
+	nextTick(() => {
+		const lmp = healthStore.lmpDate
+		lmpDateStr.value = formatDate(lmp)
 
-	calcBMI()
+		const due = healthStore.dueDate
+		dueDateStr.value = formatDate(due)
+	})
 })
 
 function formatDate(date) {
@@ -259,36 +265,48 @@ function onDueDateChange(e) {
 	dueDateStr.value = e.detail.value
 }
 
+// 防抖定时器
+let bmiCalcTimer = null
+
 function calcBMI() {
-	const w = parseFloat(form.preWeight)
-	const h = parseFloat(form.height)
-	if (!w || !h || h <= 0) {
-		bmiResult.value = null
-		return
-	}
-	const heightM = h / 100
-	const bmi = (w / (heightM * heightM)).toFixed(1)
-
-	let label = ''
-	let range = ''
-	if (bmi < 18.5) {
-		label = '偏瘦'
-		range = '12.5~18kg'
-	} else if (bmi < 24) {
-		label = '正常'
-		range = '11.5~16kg'
-	} else if (bmi < 28) {
-		label = '超重'
-		range = '7~11.5kg'
-	} else {
-		label = '肥胖'
-		range = '5~9kg'
+	// 防抖：清除已有定时器
+	if (bmiCalcTimer) {
+		clearTimeout(bmiCalcTimer)
 	}
 
-	bmiResult.value = { bmi, label, range }
+	// 延迟 50ms 执行，避免频繁计算
+	bmiCalcTimer = setTimeout(() => {
+		const w = parseFloat(form.preWeight)
+		const h = parseFloat(form.height)
+		if (!w || !h || h <= 0) {
+			bmiResult.value = null
+			return
+		}
+		const heightM = h / 100
+		const bmi = (w / (heightM * heightM)).toFixed(1)
+
+		let label = ''
+		let range = ''
+		if (bmi < 18.5) {
+			label = '偏瘦'
+			range = '12.5~18kg'
+		} else if (bmi < 24) {
+			label = '正常'
+			range = '11.5~16kg'
+		} else if (bmi < 28) {
+			label = '超重'
+			range = '7~11.5kg'
+		} else {
+			label = '肥胖'
+			range = '5~9kg'
+		}
+
+		bmiResult.value = { bmi, label, range }
+		bmiCalcTimer = null
+	}, 50)
 }
 
-function handleSave() {
+async function handleSave() {
 	// 更新 store 数据
 	healthStore.userInfo.babyNickname = form.babyNickname
 	healthStore.userInfo.hospital = form.hospital
@@ -307,15 +325,33 @@ function handleSave() {
 		healthStore.dueDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
 	}
 
-	uni.showToast({
-		title: '保存成功',
-		icon: 'success',
-		duration: 1500
-	})
+	// 显示加载状态
+	uni.showLoading({ title: '保存中...' })
 
-	setTimeout(() => {
-		uni.navigateBack()
-	}, 1500)
+	try {
+		// 等待云端保存完成
+		await healthStore.saveUserProfile()
+
+		uni.hideLoading()
+
+		uni.showToast({
+			title: '保存成功',
+			icon: 'success',
+			duration: 1500
+		})
+
+		// 保存成功后返回
+		setTimeout(() => {
+			uni.navigateBack()
+		}, 1500)
+	} catch (e) {
+		uni.hideLoading()
+		uni.showToast({
+			title: '保存失败',
+			icon: 'error',
+			duration: 2000
+		})
+	}
 }
 </script>
 

@@ -2,8 +2,7 @@
 	<view class="page">
 		<!-- Hero -->
 		<view class="hero-rose">
-			<view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-			<NavBar title="产检提醒" :showBack="true" />
+			<NavBar title="产检提醒" theme="dark" :showBack="true" class="hero-navbar" />
 			<view class="hero-content">
 				<text class="hero-label">下次产检日期</text>
 				<text class="hero-date">4月20日</text>
@@ -73,17 +72,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import NavBar from '@/components/NavBar.vue'
-
-const statusBarHeight = ref(20)
-
-onMounted(() => {
-	const app = getApp()
-	if (app && app.globalData) {
-		statusBarHeight.value = app.globalData.statusBarHeight || 20
-	}
-})
 
 const examItems = reactive([
 	{ text: '常规产检（宫高、腹围、胎心）', required: true, done: true },
@@ -116,7 +106,13 @@ const notifItems = reactive([
 	overflow: hidden;
 }
 
-.status-bar-spacer { width: 100%; }
+.hero-navbar :deep(.nav-bar-dark) {
+	background: transparent;
+}
+
+.hero-navbar :deep(.status-bar-dark) {
+	background: transparent;
+}
 
 .hero-content {
 	position: relative;

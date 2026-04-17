@@ -196,6 +196,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { navigateToPage } from '@/utils/navigation.js'
 import UploadSheet from './components/UploadSheet.vue'
 import NavBar from '@/components/NavBar.vue'
 import { useReportStore, TAB_DEFS, getTypeInfo } from '@/stores/report'
@@ -308,18 +309,18 @@ function formatDateShort(dateStr) {
 }
 
 function onBannerTap() {
-  uni.navigateTo({ url: '/pages/archives/unarchived' })
+  navigateToPage('/pages/archives/unarchived')
 }
 
 function onReportTap(report) {
-  uni.navigateTo({ url: `/pages/archives/detail?id=${report._id}` })
+  navigateToPage(`/pages/archives/detail?id=${report._id}`)
 }
 
 function onUploadSelect(result) {
   if (result.fileCount === 1) {
-    uni.navigateTo({ url: '/pages/archives/classify?source=p2' })
+    navigateToPage('/pages/archives/classify?source=p2')
   } else {
-    uni.navigateTo({ url: '/pages/archives/batch?source=p2' })
+    navigateToPage('/pages/archives/batch?source=p2')
   }
 }
 

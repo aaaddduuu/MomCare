@@ -1,5 +1,5 @@
 <template>
-  <view class="hero">
+  <view class="hero" :style="{ paddingTop: statusBarHeight + 'px' }">
     <!-- Radial highlight overlay -->
     <view class="hero-overlay"></view>
 
@@ -42,8 +42,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { getTrimester, getTrimesterName } from '@/stores/health.js'
+
+const statusBarHeight = ref(0)
+const app = getApp()
+if (app && app.globalData) {
+  statusBarHeight.value = app.globalData.statusBarHeight || 0
+}
 
 const props = defineProps({
   greeting: {
@@ -80,7 +86,7 @@ function handleTapAvatar() {
 .hero {
   position: relative;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
   padding: 0 40rpx 36rpx;
   background: linear-gradient(158deg, #C45070 0%, #E07898 36%, #F0A8BA 66%, #F8DDE8 100%);
 }
@@ -219,6 +225,7 @@ function handleTapAvatar() {
   padding: 10rpx 24rpx;
   margin-top: 16rpx;
   position: relative;
+  z-index: 2;
 }
 
 .fruit-emoji {

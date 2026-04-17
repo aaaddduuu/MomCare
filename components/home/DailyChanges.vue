@@ -33,17 +33,19 @@
       >
         <swiper-item v-for="(slide, sIdx) in slides" :key="sIdx">
           <view class="slide">
-            <!-- Baby change -->
-            <view class="ditem baby">
-              <text class="di-icon">{{ slide.baby.icon }}</text>
-              <text class="di-lbl">BABY</text>
-              <text class="di-text">{{ slide.baby.text }}</text>
-            </view>
-            <!-- Mom change -->
-            <view class="ditem mom">
-              <text class="di-icon">{{ slide.mom.icon }}</text>
-              <text class="di-lbl">MOM</text>
-              <text class="di-text">{{ slide.mom.text }}</text>
+            <view class="ditem-row">
+              <!-- Baby change -->
+              <view class="ditem baby">
+                <text class="di-icon">{{ slide.baby.icon }}</text>
+                <text class="di-lbl">BABY</text>
+                <text class="di-text">{{ slide.baby.text }}</text>
+              </view>
+              <!-- Mom change -->
+              <view class="ditem mom">
+                <text class="di-icon">{{ slide.mom.icon }}</text>
+                <text class="di-lbl">MOM</text>
+                <text class="di-text">{{ slide.mom.text }}</text>
+              </view>
             </view>
             <!-- Daily tip -->
             <view class="ditem tip">
@@ -116,7 +118,7 @@ function formatDateLabel(date) {
   const baseTotal = props.weekInfo.total
   const adjustedTotal = baseTotal + (currentIndex.value - 2)
   if (adjustedTotal >= 0) {
-    const week = Math.floor(adjustedTotal / 7) + 1
+    const week = Math.floor(adjustedTotal / 7)
     const day = adjustedTotal % 7
     return `孕 ${week} 周 ${day} 天`
   }
@@ -135,7 +137,7 @@ const navLabel = computed(() => {
   const baseTotal = props.weekInfo.total
   const adjustedTotal = baseTotal + offset.value
   if (adjustedTotal >= 0) {
-    const week = Math.floor(adjustedTotal / 7) + 1
+    const week = Math.floor(adjustedTotal / 7)
     const day = adjustedTotal % 7
     return `孕 ${week} 周 ${day} 天`
   }
@@ -324,7 +326,12 @@ $sh: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
 .slide {
   padding: 24rpx 24rpx 8rpx;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.ditem-row {
+  display: flex;
   gap: 16rpx;
 }
 
@@ -336,17 +343,16 @@ $sh: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
   transition: transform 0.15s;
 
   &.baby {
-    width: calc(50% - 8rpx);
+    flex: 1;
     border-left: 6rpx solid $rose;
   }
 
   &.mom {
-    width: calc(50% - 8rpx);
+    flex: 1;
     border-left: 6rpx solid $sage;
   }
 
   &.tip {
-    width: 100%;
     border-left: 6rpx solid $amber;
   }
 }

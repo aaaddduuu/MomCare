@@ -1,27 +1,34 @@
 <template>
 	<view class="page">
-		<!-- Hero 区域 -->
-		<HomeHero
-			:greeting="greeting"
-			:weekInfo="healthStore.todayWeekInfo.value || { week: 0, day: 0, total: 0 }"
-			:daysUntilDue="healthStore.daysUntilDue.value"
-			:fruitComparison="healthStore.fruitComparison.value"
-			@tapAvatar="goProfile"
-		/>
+		<!-- Loading 状态 -->
+		<view v-if="loading" class="loading-container">
+			<view class="loading-spinner"></view>
+			<text class="loading-text">加载中...</text>
+		</view>
 
-		<!-- 可滚动内容区 -->
+		<!-- 主内容（加载完成后显示） -->
+		<template v-else>
 		<scroll-view scroll-y class="scroll-content" @scrolltolower="onScrollBottom">
+			<!-- Hero 区域 -->
+			<HomeHero
+				:greeting="greeting"
+				:weekInfo="healthStore.todayWeekInfo || { week: 0, day: 0, total: 0 }"
+				:daysUntilDue="healthStore.daysUntilDue"
+				:fruitComparison="healthStore.fruitComparison"
+				@tapAvatar="goProfile"
+			/>
+
 			<!-- 每日变化卡片 -->
 			<DailyChanges
-				:weekInfo="healthStore.todayWeekInfo.value"
+				:weekInfo="healthStore.todayWeekInfo"
 				:selectedDate="selectedDate"
 				:healthStore="healthStore"
 			/>
 
 			<!-- 本周指南卡片 -->
 			<WeeklyGuideCard
-				:weekInfo="healthStore.todayWeekInfo.value || { week: 0, day: 0, total: 0 }"
-				:daysUntilDue="healthStore.daysUntilDue.value"
+				:weekInfo="healthStore.todayWeekInfo || { week: 0, day: 0, total: 0 }"
+				:daysUntilDue="healthStore.daysUntilDue"
 				@tapCard="goWeeklyGuide"
 			/>
 
@@ -55,6 +62,7 @@
 			@update:visible="editVisible = $event"
 			@save="handleSave"
 		/>
+		</template>
 	</view>
 </template>
 
@@ -70,6 +78,7 @@ import RecordEditSheet from '@/components/home/RecordEditSheet.vue'
 
 const healthStore = useHealthStore()
 
+const loading = ref(true)
 const selectedDate = ref(new Date())
 const editVisible = ref(false)
 const editMode = ref('weight')
@@ -80,8 +89,15 @@ const currentRecord = computed(() => {
 	return healthStore.getRecord(selectedDate.value) || {}
 })
 
-onMounted(() => {
-	healthStore.loadRecords()
+onMounted(async () => {
+	try {
+		await healthStore.loadUserProfile()
+		await healthStore.loadRecords()
+	} catch (e) {
+		console.error('首页数据加载失败:', e)
+	} finally {
+		loading.value = false
+	}
 })
 
 function onSelectDate(date) {
@@ -131,5 +147,34 @@ function onScrollBottom() {
 
 .bottom-spacer {
 	height: 120rpx;
+}
+
+/* ── Loading ── */
+.loading-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	height: 100vh;
+	background-color: #FBF7F2;
+}
+
+.loading-spinner {
+	width: 64rpx;
+	height: 64rpx;
+	border: 6rpx solid #F2F0EE;
+	border-top-color: #C45070;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	margin-bottom: 24rpx;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.loading-text {
+	font-size: 28rpx;
+	color: #9C9890;
 }
 </style>

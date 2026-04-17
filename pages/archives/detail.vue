@@ -175,6 +175,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { navigateToPage } from '@/utils/navigation.js'
 import NavBar from '@/components/NavBar.vue'
 import { useReportStore, REPORT_TYPES, getTypeInfo } from '@/stores/report'
 
@@ -331,14 +332,14 @@ async function saveEdit() {
 
 async function onAiCardTap() {
   if (aiStatus.value === 'done') {
-    uni.navigateTo({ url: `/pages/archives/ai-result?id=${reportId.value}` })
+    navigateToPage(`/pages/archives/ai-result?id=${reportId.value}`)
   } else if (aiStatus.value === 'failed' || aiStatus.value === 'pending') {
     uni.showLoading({ title: '开始解读…' })
     await reportStore.triggerAiPipeline(reportId.value)
     await loadReport()
     uni.hideLoading()
     if (report.value.ai_status === 'done') {
-      uni.navigateTo({ url: `/pages/archives/ai-result?id=${reportId.value}` })
+      navigateToPage(`/pages/archives/ai-result?id=${reportId.value}`)
     }
   }
 }

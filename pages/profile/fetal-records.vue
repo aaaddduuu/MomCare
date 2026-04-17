@@ -1,58 +1,34 @@
 <template>
   <view class="page">
     <!-- Hero 区域 -->
-    <view class="hero" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <NavBar title="胎动记录" theme="dark" />
+    <view class="hero">
+      <NavBar title="胎动记录" theme="dark" class="hero-navbar" />
 
-      <view class="hero-content">
+      <view class="hero-content" v-if="stats.count > 0">
         <text class="hero-label">今日总计</text>
-        <text class="hero-count">18次</text>
-        <text class="hero-sub">3次记录 · 早 5次 · 午 7次 · 晚 6次</text>
+        <text class="hero-count">{{ stats.today }}次</text>
+        <text class="hero-sub">已记录 {{ stats.count }} 天 · 昨日 {{ stats.yesterday }}次</text>
         <view class="hero-chips">
           <view class="chip chip-normal">
             <text class="chip-text">日正常 ≥10次</text>
           </view>
-          <view class="chip chip-status">
-            <text class="chip-text chip-text-status">正常</text>
+          <view class="chip" :class="stats.today >= 10 ? 'chip-status-normal' : 'chip-status-warn'">
+            <text class="chip-text">{{ stats.today >= 10 ? '正常' : '偏少' }}</text>
           </view>
         </view>
+      </view>
+      <view class="hero-content" v-else>
+        <text class="hero-label">暂无胎动记录</text>
+        <text class="hero-sub">去首页开始记录胎动吧</text>
       </view>
     </view>
 
     <!-- 滚动区域 -->
     <scroll-view scroll-y class="scroll-content">
-      <!-- 今日三次记录卡片 -->
-      <view class="sessions-card">
-        <view class="sessions-columns">
-          <!-- 早 -->
-          <view class="session-col">
-            <text class="session-period">早</text>
-            <text class="session-time">09:00</text>
-            <text class="session-count session-count-rose">5次</text>
-          </view>
-          <!-- 午 -->
-          <view class="session-col">
-            <text class="session-period">午</text>
-            <text class="session-time">14:00</text>
-            <text class="session-count session-count-rose">7次</text>
-          </view>
-          <!-- 晚 -->
-          <view class="session-col">
-            <text class="session-period">晚</text>
-            <text class="session-time">21:00</text>
-            <text class="session-count session-count-empty">—</text>
-            <text class="session-empty-label">待记录</text>
-          </view>
-        </view>
-        <view class="session-btn" @tap="handleRecordEvening">
-          <text class="session-btn-text">记录晚间胎动</text>
-        </view>
-      </view>
-
       <!-- 胎动热力图 -->
-      <view class="heatmap-card">
+      <view class="heatmap-card" v-if="stats.count > 0">
         <view class="heatmap-header">
-          <text class="heatmap-title">4月胎动热力图</text>
+          <text class="heatmap-title">{{ fetalData.heatmap.month + 1 }}月胎动热力图</text>
           <view class="heatmap-legend">
             <text class="legend-label">少</text>
             <view class="legend-block heat-0"></view>
@@ -75,21 +51,29 @@
 
         <!-- 日期网格 -->
         <view class="heatmap-grid">
-          <!-- 前置空白（4月1日是周二，前面空2格） -->
           <view
-            v-for="n in leadingEmpty"
+            v-for="n in fetalData.heatmap.firstDayOfWeek"
             :key="'empty-' + n"
             class="heatmap-cell heatmap-cell-empty"
           ></view>
-          <!-- 日期格子 -->
           <view
-            v-for="(item, idx) in heatData"
+            v-for="(item, idx) in fetalData.heatmap.data"
             :key="'day-' + idx"
             class="heatmap-cell"
             :class="[item.heatClass, { 'heatmap-cell-today': item.isToday }]"
           >
             <text class="cell-day">{{ item.day }}</text>
           </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="section-card empty-state" v-if="stats.count === 0">
+        <view class="empty-icon">👣</view>
+        <text class="empty-title">暂无胎动记录</text>
+        <text class="empty-desc">在首页日历中选择日期，记录胎动数据</text>
+        <view class="empty-btn" @tap="goHome">
+          <text class="empty-btn-text">去首页记录</text>
         </view>
       </view>
 
@@ -100,52 +84,21 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
-const app = getApp()
-const statusBarHeight = ref(20)
-if (app && app.globalData) {
-  statusBarHeight.value = app.globalData.statusBarHeight || 20
-}
+const healthStore = useHealthStore()
 
 const weekDays = ['日', '一', '二', '三', '四', '五', '六']
 
-// Mock data: days 1-13 have varying counts, days 14+ are empty
-const mockCounts = {
-  1: 14, 2: 18, 3: 12, 4: 22, 5: 16,
-  6: 11, 7: 20, 8: 24, 9: 15, 10: 19,
-  11: 13, 12: 17, 13: 21
-}
+// 从 store 获取统计数据
+const stats = computed(() => healthStore.getFetalStats())
 
-const today = 16
-// 4月1日是周二（2026年4月1日实际是周三，这里用2代表周二偏移，以符合需求描述）
-const leadingEmpty = 2
+// 从 store 获取胎动历史和热力图数据
+const fetalData = computed(() => healthStore.getFetalHistory())
 
-function getHeatLevel(count) {
-  if (!count || count === 0) return 'heat-0'
-  if (count >= 10 && count < 14) return 'heat-1'
-  if (count >= 14 && count < 18) return 'heat-2'
-  if (count >= 18 && count < 22) return 'heat-3'
-  if (count >= 22) return 'heat-4'
-  return 'heat-0'
-}
-
-const heatData = computed(() => {
-  const days = []
-  for (let d = 1; d <= 30; d++) {
-    const count = mockCounts[d] || 0
-    days.push({
-      day: d,
-      count,
-      heatClass: getHeatLevel(count),
-      isToday: d === today
-    })
-  }
-  return days
-})
-
-function handleRecordEvening() {
-  uni.showToast({ title: '记录晚间胎动', icon: 'none' })
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
 }
 </script>
 
@@ -163,6 +116,14 @@ function handleRecordEvening() {
   flex-shrink: 0;
   background: linear-gradient(155deg, #4A7A64 0%, #7BA08C 45%, #B0D0C0 100%);
   padding-bottom: 48rpx;
+}
+
+.hero-navbar :deep(.nav-bar-dark) {
+  background: transparent;
+}
+
+.hero-navbar :deep(.status-bar-dark) {
+  background: transparent;
 }
 
 .hero-content {
@@ -206,7 +167,11 @@ function handleRecordEvening() {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.chip-status {
+.chip-status-normal {
+  background: rgba(76, 175, 130, 0.35);
+}
+
+.chip-status-warn {
   background: rgba(232, 120, 152, 0.35);
 }
 
@@ -215,81 +180,9 @@ function handleRecordEvening() {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.chip-text-status {
-  color: #FFFFFF;
-  font-weight: 600;
-}
-
 /* Scroll */
 .scroll-content {
   flex: 1;
-}
-
-/* Sessions Card */
-.sessions-card {
-  background: #FFFFFF;
-  border-radius: 32rpx;
-  box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
-  margin: 24rpx 24rpx 0;
-  padding: 32rpx;
-}
-
-.sessions-columns {
-  display: flex;
-  margin-bottom: 32rpx;
-}
-
-.session-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.session-period {
-  font-size: 26rpx;
-  color: #9B9590;
-  font-weight: 500;
-}
-
-.session-time {
-  font-size: 22rpx;
-  color: #B5AFA9;
-}
-
-.session-count {
-  font-size: 40rpx;
-  font-weight: 700;
-  margin-top: 4rpx;
-}
-
-.session-count-rose {
-  color: #E87898;
-}
-
-.session-count-empty {
-  color: #C8C2BC;
-}
-
-.session-empty-label {
-  font-size: 22rpx;
-  color: #C8C2BC;
-}
-
-.session-btn {
-  background: linear-gradient(135deg, #E87898 0%, #D4567A 100%);
-  border-radius: 48rpx;
-  padding: 22rpx 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.session-btn-text {
-  font-size: 28rpx;
-  color: #FFFFFF;
-  font-weight: 600;
 }
 
 /* Heatmap Card */
@@ -397,6 +290,58 @@ function handleRecordEvening() {
   .cell-day {
     color: #FFFFFF;
   }
+}
+
+/* ── Empty State ── */
+.section-card {
+  background: #FFFFFF;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
+  overflow: hidden;
+  margin: 24rpx 24rpx 0;
+  padding: 32rpx;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 32rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C1A17;
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #9C9890;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.empty-btn {
+  background: linear-gradient(135deg, #4A7A64, #7BA08C);
+  border-radius: 48rpx;
+  padding: 20rpx 64rpx;
+}
+
+.empty-btn:active {
+  opacity: 0.85;
+}
+
+.empty-btn-text {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 600;
 }
 
 .bottom-spacer {

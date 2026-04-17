@@ -2,105 +2,36 @@
   <view class="page">
     <!-- Hero 区域 -->
     <view class="hero">
-      <!-- 状态栏占位 -->
-      <view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-
-      <!-- 导航栏 -->
-      <NavBar title="血压记录" theme="dark"></NavBar>
+      <NavBar title="血压记录" theme="dark" class="hero-navbar"></NavBar>
 
       <!-- Hero 内容 -->
-      <view class="hero-content">
+      <view class="hero-content" v-if="stats.count > 0">
         <text class="hero-label">最新血压</text>
         <view class="hero-value-row">
-          <text class="hero-value">118/76</text>
+          <text class="hero-value">{{ stats.latest }}</text>
           <text class="hero-unit">mmHg</text>
         </view>
-        <text class="hero-sub">收缩压 118 · 舒张压 76 · 脉压差 42</text>
+        <text class="hero-sub">收缩压 {{ stats.systolic }} · 舒张压 {{ stats.diastolic }} · 脉压差 {{ stats.systolic - stats.diastolic }}</text>
         <view class="hero-chips">
           <view class="chip chip-normal">
             <text class="chip-text">正常参考 &lt;140/90</text>
           </view>
-          <view class="chip chip-warning">
-            <text class="chip-text">血压正常</text>
+          <view class="chip" :class="stats.status === '正常' ? 'chip-status-normal' : 'chip-status-warn'">
+            <text class="chip-text">血压{{ stats.status }}</text>
           </view>
         </view>
+      </view>
+      <!-- 无数据 Hero -->
+      <view class="hero-content" v-else>
+        <text class="hero-label">暂无血压记录</text>
+        <text class="hero-sub">去首页开始记录血压吧</text>
       </view>
     </view>
 
     <!-- 滚动内容区 -->
     <scroll-view scroll-y class="scroll-content">
-      <!-- 趋势图区域 -->
-      <view class="section-card chart-card">
-        <view class="section-header">
-          <text class="section-title">血压趋势</text>
-          <view class="range-tabs">
-            <view
-              v-for="(tab, idx) in rangeTabs"
-              :key="idx"
-              class="range-tab"
-              :class="{ 'range-tab-active': activeRange === idx }"
-              @tap="activeRange = idx"
-            >
-              <text class="range-tab-text" :class="{ 'range-tab-text-active': activeRange === idx }">{{ tab }}</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 占位图表 - 双线（收缩压实线 + 舒张压虚线） -->
-        <view class="chart-placeholder">
-          <view class="chart-area">
-            <!-- 正常范围背景 -->
-            <view class="chart-normal-zone"></view>
-            <!-- 收缩压线（实线） -->
-            <view class="chart-line-container">
-              <view class="mock-point systolic-point" style="left: 10%; bottom: 68%;"></view>
-              <view class="mock-point systolic-point" style="left: 28%; bottom: 72%;"></view>
-              <view class="mock-point systolic-point" style="left: 46%; bottom: 65%;"></view>
-              <view class="mock-point systolic-point" style="left: 64%; bottom: 70%;"></view>
-              <view class="mock-point systolic-point" style="left: 82%; bottom: 67%;"></view>
-              <!-- 连线 - 收缩压（实线） -->
-              <view class="mock-line systolic-line" style="left: 10%; width: 18%; bottom: 70%; transform: rotate(3deg);"></view>
-              <view class="mock-line systolic-line" style="left: 28%; width: 18%; bottom: 68.5%; transform: rotate(-5deg);"></view>
-              <view class="mock-line systolic-line" style="left: 46%; width: 18%; bottom: 67.5%; transform: rotate(4deg);"></view>
-              <view class="mock-line systolic-line" style="left: 64%; width: 18%; bottom: 68.5%; transform: rotate(-2deg);"></view>
-              <!-- 舒张压点 -->
-              <view class="mock-point diastolic-point" style="left: 10%; bottom: 40%;"></view>
-              <view class="mock-point diastolic-point" style="left: 28%; bottom: 44%;"></view>
-              <view class="mock-point diastolic-point" style="left: 46%; bottom: 38%;"></view>
-              <view class="mock-point diastolic-point" style="left: 64%; bottom: 42%;"></view>
-              <view class="mock-point diastolic-point" style="left: 82%; bottom: 39%;"></view>
-              <!-- 连线 - 舒张压（虚线） -->
-              <view class="mock-line diastolic-line" style="left: 10%; width: 18%; bottom: 42%; transform: rotate(3deg);"></view>
-              <view class="mock-line diastolic-line" style="left: 28%; width: 18%; bottom: 41%; transform: rotate(-4deg);"></view>
-              <view class="mock-line diastolic-line" style="left: 46%; width: 18%; bottom: 40%; transform: rotate(3deg);"></view>
-              <view class="mock-line diastolic-line" style="left: 64%; width: 18%; bottom: 40.5%; transform: rotate(-2deg);"></view>
-            </view>
-            <!-- Y轴标签 -->
-            <view class="chart-y-labels">
-              <text class="chart-y-label">140</text>
-              <text class="chart-y-label">120</text>
-              <text class="chart-y-label">100</text>
-              <text class="chart-y-label">80</text>
-              <text class="chart-y-label">60</text>
-            </view>
-          </view>
-        </view>
-
-        <!-- 图例 -->
-        <view class="chart-legend">
-          <view class="legend-item">
-            <view class="legend-line legend-systolic"></view>
-            <text class="legend-text">收缩压</text>
-          </view>
-          <view class="legend-item">
-            <view class="legend-line legend-diastolic"></view>
-            <text class="legend-text">舒张压</text>
-          </view>
-        </view>
-      </view>
-
       <!-- 历史记录 -->
-      <view class="section-card">
+      <view class="section-card" v-if="historyList.length > 0">
         <view class="section-header">
           <text class="section-title">历史记录</text>
         </view>
@@ -113,18 +44,28 @@
             <view class="history-left">
               <view class="history-dot" :style="{ backgroundColor: item.dotColor }"></view>
               <view class="history-info">
-                <text class="history-date">{{ item.date }}</text>
+                <text class="history-date">{{ item.dateDisplay }}</text>
                 <text class="history-week">{{ item.week }}</text>
               </view>
             </view>
             <view class="history-right">
               <text class="history-value">{{ item.systolic }}/{{ item.diastolic }}</text>
               <text class="history-unit-label">mmHg</text>
-              <view class="history-badge" :class="item.badgeClass">
+              <view class="history-badge" :class="item.statusClass">
                 <text class="history-badge-text">{{ item.status }}</text>
               </view>
             </view>
           </view>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="section-card empty-state" v-if="stats.count === 0">
+        <view class="empty-icon">💗</view>
+        <text class="empty-title">暂无血压记录</text>
+        <text class="empty-desc">在首页日历中选择日期，记录血压数据</text>
+        <view class="empty-btn" @tap="goHome">
+          <text class="empty-btn-text">去首页记录</text>
         </view>
       </view>
 
@@ -134,61 +75,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
+import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
-const statusBarHeight = ref(20)
+const healthStore = useHealthStore()
 
-onMounted(() => {
-  const app = getApp()
-  if (app && app.globalData) {
-    statusBarHeight.value = app.globalData.statusBarHeight || 20
-  }
+// 从 store 获取统计数据
+const stats = computed(() => healthStore.getBpStats())
+
+// 从 store 获取历史记录
+const historyList = computed(() => {
+  const list = healthStore.getBpHistory()
+  return list.map(item => ({
+    ...item,
+    dotColor: item.status === '正常' ? '#4CAF82' : '#F0A940'
+  }))
 })
 
-// 范围选项卡
-const rangeTabs = ['1月', '3月', '全程']
-const activeRange = ref(1)
-
-// 历史记录模拟数据
-const historyList = ref([
-  {
-    dotColor: '#4CAF82',
-    date: '4月15日',
-    week: '孕24周+3',
-    systolic: '118',
-    diastolic: '76',
-    status: '正常',
-    badgeClass: 'badge-normal'
-  },
-  {
-    dotColor: '#F0A940',
-    date: '4月8日',
-    week: '孕23周+3',
-    systolic: '136',
-    diastolic: '88',
-    status: '偏高',
-    badgeClass: 'badge-high'
-  },
-  {
-    dotColor: '#4CAF82',
-    date: '4月1日',
-    week: '孕22周+3',
-    systolic: '122',
-    diastolic: '78',
-    status: '正常',
-    badgeClass: 'badge-normal'
-  },
-  {
-    dotColor: '#4CAF82',
-    date: '3月25日',
-    week: '孕21周+3',
-    systolic: '115',
-    diastolic: '74',
-    status: '正常',
-    badgeClass: 'badge-normal'
-  }
-])
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
 </script>
 
 <style scoped lang="scss">
@@ -227,8 +134,12 @@ page {
   overflow: hidden;
 }
 
-.status-bar-spacer {
-  width: 100%;
+.hero-navbar :deep(.nav-bar-dark) {
+  background: transparent;
+}
+
+.hero-navbar :deep(.status-bar-dark) {
+  background: transparent;
 }
 
 .hero-content {
@@ -287,6 +198,14 @@ page {
   font-weight: 500;
 }
 
+.chip-status-normal {
+  background: rgba(76, 175, 130, 0.35);
+}
+
+.chip-status-warn {
+  background: rgba(240, 169, 64, 0.35);
+}
+
 /* ── Scroll Content ── */
 .scroll-content {
   flex: 1;
@@ -313,163 +232,6 @@ page {
   font-size: 32rpx;
   font-weight: 600;
   color: #1C1A17;
-}
-
-/* ── Range Tabs ── */
-.range-tabs {
-  display: flex;
-  background: #F2F0EE;
-  border-radius: 999rpx;
-  padding: 4rpx;
-}
-
-.range-tab {
-  padding: 8rpx 24rpx;
-  border-radius: 999rpx;
-}
-
-.range-tab-active {
-  background: #FFFFFF;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
-}
-
-.range-tab-text {
-  font-size: 24rpx;
-  color: #9C9890;
-  font-weight: 500;
-}
-
-.range-tab-text-active {
-  color: #3A70A8;
-  font-weight: 600;
-}
-
-/* ── Chart Placeholder ── */
-.chart-placeholder {
-  margin-bottom: 20rpx;
-}
-
-.chart-area {
-  position: relative;
-  height: 360rpx;
-  background: #FAF9F8;
-  border-radius: 20rpx;
-  overflow: hidden;
-}
-
-.chart-normal-zone {
-  position: absolute;
-  left: 60rpx;
-  right: 20rpx;
-  top: 12%;
-  bottom: 22%;
-  background: rgba(76, 175, 130, 0.08);
-  border-top: 2rpx dashed rgba(76, 175, 130, 0.25);
-  border-bottom: 2rpx dashed rgba(76, 175, 130, 0.25);
-  border-radius: 8rpx;
-}
-
-.chart-line-container {
-  position: absolute;
-  left: 60rpx;
-  right: 20rpx;
-  top: 0;
-  bottom: 0;
-}
-
-.mock-point {
-  position: absolute;
-  width: 16rpx;
-  height: 16rpx;
-  border-radius: 50%;
-  border: 3rpx solid #FFFFFF;
-  z-index: 2;
-}
-
-.systolic-point {
-  background: #3A70A8;
-  box-shadow: 0 2rpx 8rpx rgba(58, 112, 168, 0.3);
-}
-
-.diastolic-point {
-  background: #A0C8F0;
-  box-shadow: 0 2rpx 8rpx rgba(160, 200, 240, 0.4);
-}
-
-.mock-line {
-  position: absolute;
-  height: 4rpx;
-  border-radius: 2rpx;
-  z-index: 1;
-}
-
-.systolic-line {
-  background: #3A70A8;
-}
-
-.diastolic-line {
-  background: repeating-linear-gradient(
-    90deg,
-    #A0C8F0 0rpx,
-    #A0C8F0 12rpx,
-    transparent 12rpx,
-    transparent 20rpx
-  );
-}
-
-.chart-y-labels {
-  position: absolute;
-  left: 4rpx;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 12rpx 0;
-}
-
-.chart-y-label {
-  font-size: 20rpx;
-  color: #C8C4BC;
-}
-
-/* ── Chart Legend ── */
-.chart-legend {
-  display: flex;
-  align-items: center;
-  gap: 32rpx;
-  padding-top: 16rpx;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.legend-line {
-  width: 32rpx;
-  height: 4rpx;
-  border-radius: 2rpx;
-}
-
-.legend-systolic {
-  background: #3A70A8;
-}
-
-.legend-diastolic {
-  background: repeating-linear-gradient(
-    90deg,
-    #A0C8F0 0rpx,
-    #A0C8F0 6rpx,
-    transparent 6rpx,
-    transparent 10rpx
-  );
-}
-
-.legend-text {
-  font-size: 22rpx;
-  color: #9C9890;
 }
 
 /* ── History List ── */
@@ -563,6 +325,49 @@ page {
 
 .badge-high .history-badge-text {
   color: #F0A940;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 32rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C1A17;
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #9C9890;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.empty-btn {
+  background: linear-gradient(135deg, #3A70A8, #5B8FC9);
+  border-radius: 48rpx;
+  padding: 20rpx 64rpx;
+}
+
+.empty-btn:active {
+  opacity: 0.85;
+}
+
+.empty-btn-text {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 600;
 }
 
 /* ── Bottom Spacer ── */

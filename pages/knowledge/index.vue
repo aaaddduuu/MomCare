@@ -160,6 +160,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { navigateToPage } from '@/utils/navigation.js'
 import NavBar from '@/components/NavBar.vue'
 
 // ── State ──
@@ -342,9 +343,7 @@ function switchTab(tabId) {
 }
 
 function readArticle(article) {
-	uni.navigateTo({
-		url: `/pages/knowledge/detail?id=${article._id}`
-	})
+	navigateToPage(`/pages/knowledge/detail?id=${article._id}`)
 }
 
 // ── Init ──

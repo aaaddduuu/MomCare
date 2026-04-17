@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const props = defineProps({
   title: {
@@ -45,13 +45,15 @@ const navBarContentHeight = ref(44)
 const menuButtonRightPadding = ref(0)
 
 onMounted(() => {
-  // 从 globalData 读取计算好的导航栏参数
-  const app = getApp()
-  if (app && app.globalData) {
-    statusBarHeight.value = app.globalData.statusBarHeight || 20
-    navBarContentHeight.value = app.globalData.navBarHeight || 44
-    menuButtonRightPadding.value = app.globalData.menuButtonRightPadding || 0
-  }
+  // 使用默认值先渲染，nextTick 异步获取 globalData（不阻塞首屏）
+  nextTick(() => {
+    const app = getApp()
+    if (app && app.globalData) {
+      statusBarHeight.value = app.globalData.statusBarHeight || 20
+      navBarContentHeight.value = app.globalData.navBarHeight || 44
+      menuButtonRightPadding.value = app.globalData.menuButtonRightPadding || 0
+    }
+  })
 })
 
 function handleBack() {

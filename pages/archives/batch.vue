@@ -59,6 +59,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
+import { navigateToPage } from '@/utils/navigation.js'
 import NavBar from '@/components/NavBar.vue'
 import { useReportStore, getTypeInfo } from '@/stores/report'
 
@@ -136,9 +137,7 @@ function goClassify(item, idx) {
   if (item.reportType && item.reportType !== 'other') {
     params.push(`aiType=${item.reportType}`)
   }
-  uni.navigateTo({
-    url: `/pages/archives/classify?${params.join('&')}`
-  })
+  navigateToPage(`/pages/archives/classify?${params.join('&')}`)
 }
 
 async function confirmArchive() {

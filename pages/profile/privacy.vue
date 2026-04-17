@@ -2,8 +2,7 @@
 	<view class="page">
 		<!-- Hero -->
 		<view class="hero-gray">
-			<view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-			<NavBar title="隐私与数据" :showBack="true" />
+			<NavBar title="隐私与数据" theme="dark" :showBack="true" class="hero-navbar" />
 			<view class="hero-content">
 				<text class="hero-label">数据存储</text>
 				<text class="hero-val">128<text class="hero-unit">MB</text></text>
@@ -58,17 +57,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
 import NavBar from '@/components/NavBar.vue'
-
-const statusBarHeight = ref(20)
-
-onMounted(() => {
-	const app = getApp()
-	if (app && app.globalData) {
-		statusBarHeight.value = app.globalData.statusBarHeight || 20
-	}
-})
 
 const dataItems = [
 	{ icon: '⚖️', iconBg: '#FAEAEE', title: '体重记录', count: '42 条记录 · 约 12KB', type: 'weight', exportLabel: '导出 CSV' },
@@ -121,7 +110,13 @@ function handleAction(item) {
 	flex-shrink: 0;
 }
 
-.status-bar-spacer { width: 100%; }
+.hero-navbar :deep(.nav-bar-dark) {
+	background: transparent;
+}
+
+.hero-navbar :deep(.status-bar-dark) {
+	background: transparent;
+}
 
 .hero-content { position: relative; z-index: 1; }
 

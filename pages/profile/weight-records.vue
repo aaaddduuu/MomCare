@@ -2,35 +2,38 @@
   <view class="page">
     <!-- Hero 区域 -->
     <view class="hero">
-      <!-- 状态栏占位 -->
-      <view class="status-bar-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-
       <!-- 导航栏 -->
-      <NavBar title="体重记录" theme="dark"></NavBar>
+      <NavBar title="体重记录" theme="dark" class="hero-navbar"></NavBar>
 
       <!-- Hero 内容 -->
-      <view class="hero-content">
+      <view class="hero-content" v-if="stats.count > 0">
         <text class="hero-label">最新体重</text>
         <view class="hero-value-row">
-          <text class="hero-value">62.5</text>
+          <text class="hero-value">{{ stats.latest }}</text>
           <text class="hero-unit">kg</text>
         </view>
-        <text class="hero-sub">孕前体重 54.0kg · 孕期增重 +8.5kg</text>
+        <text class="hero-sub" v-if="stats.preWeight">孕前体重 {{ stats.preWeight }}kg · 孕期增重 {{ stats.gain }}kg</text>
+        <text class="hero-sub" v-else>暂未设置孕前体重</text>
         <view class="hero-chips">
           <view class="chip chip-who">
             <text class="chip-text">WHO 推荐增重范围</text>
           </view>
           <view class="chip chip-progress">
-            <text class="chip-text">增重正常</text>
+            <text class="chip-text">{{ stats.gain && parseFloat(stats.gain) >= 0 ? '增重正常' : '需关注' }}</text>
           </view>
         </view>
+      </view>
+      <!-- 无数据 Hero -->
+      <view class="hero-content" v-else>
+        <text class="hero-label">暂无体重记录</text>
+        <text class="hero-sub">去首页开始记录体重吧</text>
       </view>
     </view>
 
     <!-- 滚动内容区 -->
     <scroll-view scroll-y class="scroll-content">
-      <!-- 趋势图区域 -->
-      <view class="section-card chart-card">
+      <!-- 有数据时显示图表 -->
+      <view v-if="stats.count > 0" class="section-card chart-card">
         <view class="section-header">
           <text class="section-title">体重趋势</text>
           <view class="range-tabs">
@@ -49,28 +52,19 @@
         <!-- 占位图表 -->
         <view class="chart-placeholder">
           <view class="chart-area">
-            <!-- WHO 推荐范围背景 -->
             <view class="chart-who-zone"></view>
-            <!-- 模拟数据折线 -->
             <view class="chart-line-container">
-              <view class="mock-point" style="left: 10%; bottom: 30%;"></view>
-              <view class="mock-point" style="left: 25%; bottom: 38%;"></view>
-              <view class="mock-point" style="left: 40%; bottom: 50%;"></view>
-              <view class="mock-point" style="left: 55%; bottom: 58%;"></view>
-              <view class="mock-point" style="left: 70%; bottom: 65%;"></view>
-              <view class="mock-point" style="left: 85%; bottom: 72%;"></view>
-              <!-- 连线 -->
-              <view class="mock-line" style="left: 10%; width: 15%; bottom: 34%; transform: rotate(10deg);"></view>
-              <view class="mock-line" style="left: 25%; width: 15%; bottom: 44%; transform: rotate(14deg);"></view>
-              <view class="mock-line" style="left: 40%; width: 15%; bottom: 54%; transform: rotate(10deg);"></view>
-              <view class="mock-line" style="left: 55%; width: 15%; bottom: 61.5%; transform: rotate(8deg);"></view>
-              <view class="mock-line" style="left: 70%; width: 15%; bottom: 68.5%; transform: rotate(10deg);"></view>
+              <view
+                v-for="(pt, idx) in chartPoints"
+                :key="'pt-' + idx"
+                class="mock-point"
+                :style="{ left: pt.x + '%', bottom: pt.y + '%' }"
+              ></view>
             </view>
-            <!-- Y轴标签 -->
             <view class="chart-y-labels">
-              <text class="chart-y-label">70</text>
-              <text class="chart-y-label">60</text>
-              <text class="chart-y-label">50</text>
+              <text class="chart-y-label">{{ yLabels[0] }}</text>
+              <text class="chart-y-label">{{ yLabels[1] }}</text>
+              <text class="chart-y-label">{{ yLabels[2] }}</text>
             </view>
           </view>
         </view>
@@ -82,7 +76,7 @@
       </view>
 
       <!-- 历史记录 -->
-      <view class="section-card">
+      <view class="section-card" v-if="historyList.length > 0">
         <view class="section-header">
           <text class="section-title">历史记录</text>
         </view>
@@ -95,12 +89,12 @@
             <view class="history-left">
               <view class="history-dot" :style="{ backgroundColor: item.dotColor }"></view>
               <view class="history-info">
-                <text class="history-date">{{ item.date }}</text>
+                <text class="history-date">{{ item.dateDisplay }}</text>
                 <text class="history-week">{{ item.week }}</text>
               </view>
             </view>
             <view class="history-right">
-              <text class="history-value">{{ item.value }}</text>
+              <text class="history-value">{{ item.weight }}</text>
               <text class="history-unit-label">kg</text>
               <view class="history-diff" :class="item.diffClass">
                 <text class="history-diff-text">{{ item.diff }}</text>
@@ -110,71 +104,82 @@
         </view>
       </view>
 
+      <!-- 空状态 -->
+      <view class="section-card empty-state" v-if="stats.count === 0">
+        <view class="empty-icon">⚖️</view>
+        <text class="empty-title">暂无体重记录</text>
+        <text class="empty-desc">在首页日历中选择日期，记录体重数据</text>
+        <view class="empty-btn" @tap="goHome">
+          <text class="empty-btn-text">去首页记录</text>
+        </view>
+      </view>
+
       <view class="bottom-spacer"></view>
     </scroll-view>
   </view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
-const statusBarHeight = ref(20)
+console.log('[weight-records] setup start')
+const healthStore = useHealthStore()
+console.log('[weight-records] store ready')
 
 onMounted(() => {
-  const app = getApp()
-  if (app && app.globalData) {
-    statusBarHeight.value = app.globalData.statusBarHeight || 20
-  }
+  console.log('[weight-records] page onMounted')
 })
 
 // 范围选项卡
 const rangeTabs = ['1月', '3月', '全程']
 const activeRange = ref(1)
 
-// 历史记录模拟数据
-const historyList = ref([
-  {
-    dotColor: '#C45070',
-    date: '4月15日',
-    week: '孕24周+3',
-    value: '62.5',
-    diff: '+0.3',
-    diffClass: 'diff-up'
-  },
-  {
-    dotColor: '#D4788C',
-    date: '4月8日',
-    week: '孕23周+3',
-    value: '62.2',
-    diff: '+0.5',
-    diffClass: 'diff-up'
-  },
-  {
-    dotColor: '#4CAF82',
-    date: '4月1日',
-    week: '孕22周+3',
-    value: '61.7',
-    diff: '-0.3',
-    diffClass: 'diff-down'
-  },
-  {
-    dotColor: '#D4788C',
-    date: '3月25日',
-    week: '孕21周+3',
-    value: '62.0',
-    diff: '+0.4',
-    diffClass: 'diff-up'
-  },
-  {
-    dotColor: '#9C9890',
-    date: '3月18日',
-    week: '孕20周+3',
-    value: '61.6',
-    diff: '±0',
-    diffClass: 'diff-zero'
-  }
-])
+// 从 store 获取统计数据
+const stats = computed(() => healthStore.getWeightStats())
+
+// 从 store 获取历史记录
+const historyList = computed(() => {
+  const list = healthStore.getWeightHistory()
+  return list.map(item => ({
+    ...item,
+    dotColor: parseFloat(item.diff) > 0 ? '#C45070' : parseFloat(item.diff) < 0 ? '#4CAF82' : '#9C9890'
+  }))
+})
+
+// 生成图表点位
+const chartPoints = computed(() => {
+  const list = healthStore.getWeightHistory()
+  if (list.length === 0) return []
+
+  const reversed = [...list].reverse()
+  const weights = reversed.map(r => parseFloat(r.weight))
+  const minW = Math.min(...weights)
+  const maxW = Math.max(...weights)
+  const range = maxW - minW || 1
+
+  return reversed.map((r, i) => {
+    const x = list.length === 1 ? 50 : (i / (list.length - 1)) * 80 + 5
+    const y = ((parseFloat(r.weight) - minW) / range) * 60 + 20
+    return { x, y }
+  })
+})
+
+// Y 轴标签
+const yLabels = computed(() => {
+  const list = healthStore.getWeightHistory()
+  if (list.length === 0) return ['--', '--', '--']
+  const weights = list.map(r => parseFloat(r.weight))
+  const maxW = Math.ceil(Math.max(...weights))
+  const minW = Math.floor(Math.min(...weights))
+  const mid = Math.round((maxW + minW) / 2)
+  return [String(maxW), String(mid), String(minW)]
+})
+
+function goHome() {
+  uni.switchTab({ url: '/pages/index/index' })
+}
 </script>
 
 <style scoped lang="scss">
@@ -213,8 +218,12 @@ page {
   overflow: hidden;
 }
 
-.status-bar-spacer {
-  width: 100%;
+.hero-navbar :deep(.nav-bar-dark) {
+  background: transparent;
+}
+
+.hero-navbar :deep(.status-bar-dark) {
+  background: transparent;
 }
 
 .hero-content {
@@ -374,14 +383,6 @@ page {
   z-index: 2;
 }
 
-.mock-line {
-  position: absolute;
-  height: 4rpx;
-  background: linear-gradient(90deg, #C45070, #E07898);
-  border-radius: 2rpx;
-  z-index: 1;
-}
-
 .chart-y-labels {
   position: absolute;
   left: 8rpx;
@@ -517,6 +518,49 @@ page {
 
 .diff-zero .history-diff-text {
   color: #9C9890;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 32rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1C1A17;
+  margin-bottom: 12rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #9C9890;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.empty-btn {
+  background: linear-gradient(135deg, #C45070, #E07898);
+  border-radius: 48rpx;
+  padding: 20rpx 64rpx;
+}
+
+.empty-btn:active {
+  opacity: 0.85;
+}
+
+.empty-btn-text {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: 600;
 }
 
 /* ── Bottom Spacer ── */
