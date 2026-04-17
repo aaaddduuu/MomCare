@@ -1,4 +1,6 @@
 <script>
+	import { useHealthStore } from '@/stores/health.js'
+
 	export default {
 		globalData: {
 			statusBarHeight: 20,
@@ -9,9 +11,10 @@
 			console.log('MomCare Launch')
 
 			try {
-				// 获取系统信息，计算状态栏高度
-				const systemInfo = uni.getSystemInfoSync()
-				const statusBarHeight = systemInfo.statusBarHeight || 20
+				// 使用新 API 获取窗口信息（替代已废弃的 getSystemInfoSync）
+				const windowInfo = uni.getWindowInfo()
+				const statusBarHeight = windowInfo.statusBarHeight || 20
+				const windowWidth = windowInfo.windowWidth || 375
 				let navBarHeight = 44
 				let menuButtonRightPadding = 0
 
@@ -22,7 +25,7 @@
 						// 导航栏内容高度 = 胶囊按钮高度 + (胶囊距状态栏顶部的间距 * 2)
 						navBarHeight = (menuButton.bottom - menuButton.top) + (menuButton.top - statusBarHeight) * 2
 						// 右侧 padding = 屏幕宽度 - 胶囊左侧距离 + 额外间距
-						menuButtonRightPadding = systemInfo.windowWidth - menuButton.left + 8
+						menuButtonRightPadding = windowWidth - menuButton.left + 8
 					}
 				} catch (e) {
 					console.warn('getMenuButtonBoundingClientRect failed', e)
@@ -50,7 +53,6 @@
 		methods: {
 			async _silentLogin() {
 				try {
-					const { useHealthStore } = require('@/stores/health.js')
 					const store = useHealthStore()
 					await store.silentLogin()
 				} catch (e) {
