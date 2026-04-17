@@ -161,10 +161,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { navigateToPage } from '@/utils/navigation.js'
+import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
+const healthStore = useHealthStore()
+
 // ── State ──
-const currentWeek = ref(23)
+const currentWeek = computed(() => {
+	const weekInfo = healthStore.todayWeekInfo
+	return weekInfo ? weekInfo.week : 0
+})
 const searchKeyword = ref('')
 const activeTab = ref('recommended')
 const articleList = ref([])
