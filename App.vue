@@ -35,12 +35,28 @@
 			} catch (e) {
 				console.error('App onLaunch error:', e)
 			}
+
+			// 微信静默登录（不阻断应用启动）
+			// #ifdef MP-WEIXIN
+			this._silentLogin()
+			// #endif
 		},
 		onShow: function() {
 			console.log('MomCare Show')
 		},
 		onHide: function() {
 			console.log('MomCare Hide')
+		},
+		methods: {
+			async _silentLogin() {
+				try {
+					const { useHealthStore } = require('@/stores/health.js')
+					const store = useHealthStore()
+					await store.silentLogin()
+				} catch (e) {
+					console.warn('App._silentLogin 失败，使用本地模式', e.message)
+				}
+			}
 		}
 	}
 </script>
