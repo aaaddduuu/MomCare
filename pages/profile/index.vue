@@ -224,37 +224,7 @@ const todoItems = computed(() => {
 
 // 设置（含开关状态）
 const settingItems = reactive([
-	{
-		icon: '🔔',
-		iconBg: '#EBF2FB',
-		title: '每日推送提醒',
-		subtitle: '每天早8点推送孕期变化',
-		toggle: true,
-		action: 'pushReminder'
-	},
-	{
-		icon: '💊',
-		iconBg: '#EAF2EE',
-		title: '产检提醒',
-		subtitle: '产检前1天提前提醒',
-		toggle: true,
-		action: 'checkupReminder'
-	},
-	{
-		icon: '👣',
-		iconBg: '#FAEAEE',
-		title: '胎动记录提醒',
-		subtitle: '9:00 / 14:00 / 21:00 提醒',
-		toggle: false,
-		action: 'fetalReminder'
-	},
-	{
-		icon: '🔒',
-		iconBg: '#F2F0EE',
-		title: '隐私与数据',
-		subtitle: '数据导出 · 账号注销',
-		action: 'privacy'
-	},
+	// 每日推送提醒、产检提醒、胎动记录提醒、隐私与数据 — 暂时隐藏，功能开发中
 	{
 		icon: 'ℹ️',
 		iconBg: '#F2F0EE',
