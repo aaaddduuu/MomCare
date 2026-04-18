@@ -443,6 +443,7 @@ export const useHealthStore = defineStore('health', () => {
 		// 异步保存到云端
 		try {
 			const db = getDb()
+			const now = dateToCloudDate(new Date())
 			const updateData = {
 				nickname: userInfo.value.nickname || '',
 				avatar: userInfo.value.avatar || '',
@@ -452,27 +453,47 @@ export const useHealthStore = defineStore('health', () => {
 				hospital_phone: userInfo.value.hospitalPhone || '',
 				pre_weight: userInfo.value.preWeight || '',
 				height: userInfo.value.height || '',
-				lmp_date: dateToCloudDate(lmpDate.value),
-				due_date: dateToCloudDate(dueDate.value),
-				update_time: dateToCloudDate(new Date())
+				update_time: now
+			}
+			if (lmpDate.value) updateData.lmp_date = dateToCloudDate(lmpDate.value)
+			if (dueDate.value) updateData.due_date = dateToCloudDate(dueDate.value)
+
+			// 用 openid 查询（兼容自建登录和 uniCloud 内置认证）
+			let existingDoc = null
+			if (openid.value) {
+				const checkRes = await db.collection('mom_users')
+					.where({ openid: openid.value })
+					.limit(1)
+					.get()
+				if (checkRes.result && checkRes.result.data && checkRes.result.data.length > 0) {
+					existingDoc = checkRes.result.data[0]
+				}
+			} else {
+				// 没有 openid 时尝试 $env.OPENID（uniCloud 内置认证）
+				try {
+					const checkRes = await db.collection('mom_users')
+						.where('openid == $env.OPENID')
+						.limit(1)
+						.get()
+					if (checkRes.result && checkRes.result.data && checkRes.result.data.length > 0) {
+						existingDoc = checkRes.result.data[0]
+					}
+				} catch (e) {
+					// $env.OPENID 不可用，跳过
+				}
 			}
 
-			// 先查询是否存在
-			const checkRes = await db.collection('mom_users')
-				.where('openid == $env.OPENID')
-				.limit(1)
-				.get()
-
-			if (checkRes.result && checkRes.result.data && checkRes.result.data.length > 0) {
+			if (existingDoc) {
 				// 更新
 				await db.collection('mom_users')
-					.doc(checkRes.result.data[0]._id)
+					.doc(existingDoc._id)
 					.update(updateData)
-			} else {
-				// 新建（必须带 openid）
+			} else if (openid.value) {
+				// 新建（必须带 openid 和 create_time）
 				await db.collection('mom_users').add({
 					...updateData,
-					openid: openid.value || undefined
+					openid: openid.value,
+					create_time: now
 				})
 			}
 			console.log('saveUserProfile: 云端保存成功')
