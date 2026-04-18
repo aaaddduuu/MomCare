@@ -239,14 +239,15 @@ onMounted(() => {
 	// 延迟日期格式化，避免阻塞首屏
 	nextTick(() => {
 		const lmp = healthStore.lmpDate
-		lmpDateStr.value = formatDate(lmp)
+		if (lmp) lmpDateStr.value = formatDate(lmp)
 
 		const due = healthStore.dueDate
-		dueDateStr.value = formatDate(due)
+		if (due) dueDateStr.value = formatDate(due)
 	})
 })
 
 function formatDate(date) {
+	if (!date) return ''
 	const y = date.getFullYear()
 	const m = String(date.getMonth() + 1).padStart(2, '0')
 	const d = String(date.getDate()).padStart(2, '0')

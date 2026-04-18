@@ -11,8 +11,11 @@
 			</view>
 			<view class="pc-name-block">
 				<text class="pc-name">{{ displayName }}</text>
-				<view class="pc-preg-tag">
+				<view class="pc-preg-tag" v-if="pregInfoSet && weekInfo.week > 0">
 					<text class="pc-preg-tag-text">🤰 孕 {{ weekInfo.week }} 周 {{ weekInfo.day }} 天 · {{ trimesterName }}</text>
+				</view>
+				<view class="pc-preg-tag" v-else>
+					<text class="pc-preg-tag-text">点击设置孕期信息</text>
 				</view>
 			</view>
 		</view>
@@ -55,14 +58,18 @@ import { getTrimesterName } from '@/stores/health.js'
 
 const props = defineProps({
 	userInfo: { type: Object, required: true },
-	weekInfo: { type: Object, required: true },
-	daysUntilDue: { type: Number, required: true },
-	totalPregDays: { type: Number, required: true },
-	progressPercent: { type: Number, required: true },
-	isLoggedIn: { type: Boolean, default: false }
+	weekInfo: { type: Object, default: () => ({ week: 0, day: 0, total: 0 }) },
+	daysUntilDue: { type: Number, default: 0 },
+	totalPregDays: { type: Number, default: 0 },
+	progressPercent: { type: Number, default: 0 },
+	isLoggedIn: { type: Boolean, default: false },
+	pregInfoSet: { type: Boolean, default: false }
 })
 
-const trimesterName = getTrimesterName(getTrimesterFromWeek(props.weekInfo.week))
+const trimesterName = computed(() => {
+	if (!props.pregInfoSet || !props.weekInfo || !props.weekInfo.week) return ''
+	return getTrimesterName(getTrimesterFromWeek(props.weekInfo.week))
+})
 
 function getTrimesterFromWeek(w) {
 	if (w <= 12) return 'early'

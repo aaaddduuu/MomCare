@@ -24,11 +24,12 @@ import { computed } from 'vue'
 const props = defineProps({
 	daysUntilDue: { type: Number, required: true },
 	progressPercent: { type: Number, required: true },
-	dueDate: { type: Date, required: true }
+	dueDate: { type: Date, default: null }
 })
 
 const dueDateText = computed(() => {
 	const d = props.dueDate
+	if (!d) return '未设置'
 	return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 })
 

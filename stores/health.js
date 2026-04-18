@@ -615,6 +615,7 @@ export const useHealthStore = defineStore('health', () => {
 	}
 
 	async function initCheckupSchedules() {
+		if (!lmpDate.value) return
 		try {
 			const hospitalDefault = userInfo.value.hospital || ''
 			const newSchedules = CHECKUP_TEMPLATES.map(template =>

@@ -9,6 +9,7 @@
 				:totalPregDays="healthStore.totalPregDays"
 				:progressPercent="healthStore.progressPercent"
 				:isLoggedIn="healthStore.isLoggedIn"
+				:pregInfoSet="healthStore.pregInfoSet"
 			/>
 
 			<!-- 倒计时环 -->
@@ -68,33 +69,35 @@ const healthStore = useHealthStore()
 const pregInfoItems = computed(() => {
 	const lmp = healthStore.lmpDate
 	const due = healthStore.dueDate
+	const lmpText = lmp ? `${lmp.getFullYear()}年${lmp.getMonth() + 1}月${lmp.getDate()}日` : '未设置'
+	const dueText = due ? `${due.getFullYear()}年${due.getMonth() + 1}月${due.getDate()}日（可由医生修正）` : '未设置'
 	return [
 		{
 			icon: '📅',
 			iconBg: '#FAEAEE',
 			title: '末次月经',
-			subtitle: `${lmp.getFullYear()}年${lmp.getMonth() + 1}月${lmp.getDate()}日`,
+			subtitle: lmpText,
 			action: 'editLmp'
 		},
 		{
 			icon: '🎀',
 			iconBg: '#FDF3E3',
 			title: '预产期',
-			subtitle: `${due.getFullYear()}年${due.getMonth() + 1}月${due.getDate()}日（可由医生修正）`,
+			subtitle: dueText,
 			action: 'editDue'
 		},
 		{
 			icon: '🏥',
 			iconBg: '#DDD0F5',
 			title: '就诊医院',
-			subtitle: healthStore.userInfo.hospital,
+			subtitle: healthStore.userInfo.hospital || '未设置',
 			action: 'editHospital'
 		},
 		{
 			icon: '👶',
 			iconBg: '#EAF7EF',
 			title: '宝宝昵称',
-			subtitle: healthStore.userInfo.babyNickname,
+			subtitle: healthStore.userInfo.babyNickname || '未设置',
 			action: 'editNickname'
 		}
 	]
