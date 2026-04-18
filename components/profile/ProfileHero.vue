@@ -11,7 +11,7 @@
 			</view>
 			<view class="pc-name-block">
 				<text class="pc-name">{{ displayName }}</text>
-				<view class="pc-preg-tag" v-if="pregInfoSet && weekInfo.week > 0">
+				<view class="pc-preg-tag" v-if="pregInfoSet && weekInfo && weekInfo.week > 0">
 					<text class="pc-preg-tag-text">🤰 孕 {{ weekInfo.week }} 周 {{ weekInfo.day }} 天 · {{ trimesterName }}</text>
 				</view>
 				<view class="pc-preg-tag" v-else>
@@ -79,12 +79,15 @@ function getTrimesterFromWeek(w) {
 
 const statusBarHeight = ref(20)
 
-// 显示名称：已登录显示昵称，未登录显示"点击登录"
+// 显示名称：有昵称就显示昵称，否则提示设置
 const displayName = computed(() => {
-	if (props.isLoggedIn && props.userInfo.nickname) {
+	if (props.userInfo.nickname) {
 		return props.userInfo.nickname
 	}
-	return '点击登录'
+	if (props.pregInfoSet) {
+		return '宝妈'
+	}
+	return '点击设置'
 })
 
 // 显示头像：判断是 emoji 还是 URL
@@ -98,8 +101,8 @@ const displayAvatar = computed(() => {
 })
 
 function handleAvatarTap() {
-	if (!props.isLoggedIn || !props.pregInfoSet) {
-		// 未登录或未设置孕期信息，跳转到孕期信息页
+	if (!props.pregInfoSet) {
+		// 未设置孕期信息，跳转到孕期信息页
 		uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
 		return
 	}
