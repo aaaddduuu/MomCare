@@ -10,6 +10,7 @@
 				:progressPercent="healthStore.progressPercent"
 				:isLoggedIn="healthStore.isLoggedIn"
 				:pregInfoSet="healthStore.pregInfoSet"
+				@tapLogin="showLoginPopup"
 			/>
 
 			<!-- 倒计时环 -->
@@ -52,6 +53,13 @@
 
 			<view class="bottom-spacer"></view>
 		</scroll-view>
+
+		<!-- 登录弹框 -->
+		<LoginPopup
+			:visible="loginPopupVisible"
+			@update:visible="loginPopupVisible = $event"
+			@success="onLoginSuccess"
+		/>
 	</view>
 </template>
 
@@ -62,8 +70,19 @@ import { navigateToPage } from '@/utils/navigation.js'
 import ProfileHero from '@/components/profile/ProfileHero.vue'
 import DueCountdownRing from '@/components/common/DueCountdownRing.vue'
 import ProfileSection from '@/components/profile/ProfileSection.vue'
+import LoginPopup from '@/components/common/LoginPopup.vue'
 
 const healthStore = useHealthStore()
+const loginPopupVisible = ref(false)
+
+function showLoginPopup() {
+	loginPopupVisible.value = true
+}
+
+function onLoginSuccess() {
+	// 登录成功后加载云端数据
+	healthStore.loadUserProfile()
+}
 
 // 孕期信息
 const pregInfoItems = computed(() => {

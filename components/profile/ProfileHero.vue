@@ -100,9 +100,16 @@ const displayAvatar = computed(() => {
 	return props.userInfo.avatar || '🌸'
 })
 
+const emit = defineEmits(['tapLogin'])
+
 function handleAvatarTap() {
+	if (!props.isLoggedIn) {
+		// 未登录，触发登录弹框
+		emit('tapLogin')
+		return
+	}
 	if (!props.pregInfoSet) {
-		// 未设置孕期信息，跳转到孕期信息页
+		// 已登录但未设置孕期信息
 		uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
 		return
 	}
