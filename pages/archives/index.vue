@@ -269,7 +269,7 @@ async function loadData() {
       console.log('Using cached data due to fetch error')
     } else {
       // 没有缓存数据，显示错误
-      loadError.value = '本地数据库配额已用完，请稍后重试或切换到云端空间'
+      loadError.value = '云端服务暂时不可用，请稍后重试'
     }
     loading.value = false
   }

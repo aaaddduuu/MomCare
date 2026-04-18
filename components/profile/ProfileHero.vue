@@ -98,8 +98,9 @@ const displayAvatar = computed(() => {
 })
 
 function handleAvatarTap() {
-	if (!props.isLoggedIn) {
-		// 未登录时不做跳转（登录是自动的，此处仅提示）
+	if (!props.isLoggedIn || !props.pregInfoSet) {
+		// 未登录或未设置孕期信息，跳转到孕期信息页
+		uni.navigateTo({ url: '/pages/profile/pregnancy-info' })
 		return
 	}
 	uni.navigateTo({ url: '/pages/profile/edit-profile' })
