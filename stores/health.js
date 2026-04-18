@@ -430,8 +430,8 @@ export const useHealthStore = defineStore('health', () => {
 	async function saveUserProfile() {
 		// 先保存本地缓存
 		const profileData = {
-			lmpDate: lmpDate.value.toISOString(),
-			dueDate: dueDate.value.toISOString(),
+			lmpDate: lmpDate.value ? lmpDate.value.toISOString() : null,
+			dueDate: dueDate.value ? dueDate.value.toISOString() : null,
 			userInfo: { ...userInfo.value }
 		}
 		try {
@@ -440,11 +440,10 @@ export const useHealthStore = defineStore('health', () => {
 			console.error('saveUserProfile local cache error:', e)
 		}
 
-		// 异步保存到云端
+		// 异步保存到云端（通过云函数绕过数据库权限限制）
+		if (!openid.value) return
 		try {
-			const db = getDb()
-			const now = dateToCloudDate(new Date())
-			const updateData = {
+			const cloudProfileData = {
 				nickname: userInfo.value.nickname || '',
 				avatar: userInfo.value.avatar || '',
 				hospital: userInfo.value.hospital || '',
@@ -452,51 +451,25 @@ export const useHealthStore = defineStore('health', () => {
 				doctor: userInfo.value.doctor || '',
 				hospital_phone: userInfo.value.hospitalPhone || '',
 				pre_weight: userInfo.value.preWeight || '',
-				height: userInfo.value.height || '',
-				update_time: now
+				height: userInfo.value.height || ''
 			}
-			if (lmpDate.value) updateData.lmp_date = dateToCloudDate(lmpDate.value)
-			if (dueDate.value) updateData.due_date = dateToCloudDate(dueDate.value)
+			if (lmpDate.value) cloudProfileData.lmp_date = dateToCloudDate(lmpDate.value)
+			if (dueDate.value) cloudProfileData.due_date = dateToCloudDate(dueDate.value)
 
-			// 用 openid 查询（兼容自建登录和 uniCloud 内置认证）
-			let existingDoc = null
-			if (openid.value) {
-				const checkRes = await db.collection('mom_users')
-					.where({ openid: openid.value })
-					.limit(1)
-					.get()
-				if (checkRes.result && checkRes.result.data && checkRes.result.data.length > 0) {
-					existingDoc = checkRes.result.data[0]
-				}
-			} else {
-				// 没有 openid 时尝试 $env.OPENID（uniCloud 内置认证）
-				try {
-					const checkRes = await db.collection('mom_users')
-						.where('openid == $env.OPENID')
-						.limit(1)
-						.get()
-					if (checkRes.result && checkRes.result.data && checkRes.result.data.length > 0) {
-						existingDoc = checkRes.result.data[0]
-					}
-				} catch (e) {
-					// $env.OPENID 不可用，跳过
-				}
-			}
-
-			if (existingDoc) {
-				// 更新
-				await db.collection('mom_users')
-					.doc(existingDoc._id)
-					.update(updateData)
-			} else if (openid.value) {
-				// 新建（必须带 openid 和 create_time）
-				await db.collection('mom_users').add({
-					...updateData,
+			const res = await uniCloud.callFunction({
+				name: 'wxLogin',
+				data: {
+					action: 'saveProfile',
 					openid: openid.value,
-					create_time: now
-				})
+					profileData: cloudProfileData
+				}
+			})
+
+			if (res.result && res.result.code === 200) {
+				console.log('saveUserProfile: 云端保存成功')
+			} else {
+				console.warn('saveUserProfile: 云端保存失败', res.result)
 			}
-			console.log('saveUserProfile: 云端保存成功')
 		} catch (e) {
 			console.error('saveUserProfile 云端保存失败（本地已生效）:', e)
 		}

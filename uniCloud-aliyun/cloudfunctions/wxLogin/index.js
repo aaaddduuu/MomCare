@@ -1,11 +1,19 @@
 'use strict'
 const db = uniCloud.database()
 
-// 从环境变量读取微信配置（需在 uniCloud 控制台配置）
-const APPID = process.env.WX_APPID || ''
-const APPSECRET = process.env.WX_APPSECRET || ''
+// 微信小程序配置（也可通过环境变量覆盖）
+const APPID = process.env.WX_APPID || 'wxf131140360855218'
+const APPSECRET = process.env.WX_APPSECRET || 'afceed7bad9b0c1430ff2021c6a3f89d'
 
 exports.main = async (event, context) => {
+	const { action } = event
+
+	// 保存用户资料（前端无法直接写数据库，走云函数绕过权限）
+	if (action === 'saveProfile') {
+		return await saveProfile(event)
+	}
+
+	// 默认：微信登录
 	const { code } = event
 
 	if (!code) {
@@ -110,5 +118,54 @@ exports.main = async (event, context) => {
 	return {
 		code: 200,
 		data: { openid, userInfo, isNewUser }
+	}
+}
+
+// 保存用户资料到云端
+async function saveProfile(event) {
+	const { openid, profileData } = event
+	if (!openid) {
+		return { code: 400, msg: '缺少 openid' }
+	}
+
+	try {
+		const now = new Date()
+		// 查询是否已有记录
+		const queryRes = await db.collection('mom_users')
+			.where({ openid })
+			.limit(1)
+			.get()
+
+		// 构建更新数据，过滤掉空值
+		const updateData = { update_time: now }
+		if (profileData.nickname !== undefined) updateData.nickname = profileData.nickname
+		if (profileData.avatar !== undefined) updateData.avatar = profileData.avatar
+		if (profileData.hospital !== undefined) updateData.hospital = profileData.hospital
+		if (profileData.baby_nickname !== undefined) updateData.baby_nickname = profileData.baby_nickname
+		if (profileData.doctor !== undefined) updateData.doctor = profileData.doctor
+		if (profileData.hospital_phone !== undefined) updateData.hospital_phone = profileData.hospital_phone
+		if (profileData.pre_weight !== undefined) updateData.pre_weight = profileData.pre_weight
+		if (profileData.height !== undefined) updateData.height = profileData.height
+		if (profileData.lmp_date) updateData.lmp_date = profileData.lmp_date
+		if (profileData.due_date) updateData.due_date = profileData.due_date
+
+		if (queryRes.data && queryRes.data.length > 0) {
+			// 更新已有记录
+			await db.collection('mom_users')
+				.doc(queryRes.data[0]._id)
+				.update(updateData)
+		} else {
+			// 新建记录
+			await db.collection('mom_users').add({
+				...updateData,
+				openid,
+				create_time: now
+			})
+		}
+
+		return { code: 200, msg: '保存成功' }
+	} catch (e) {
+		console.error('saveProfile 失败:', e.message)
+		return { code: 500, msg: '保存失败' }
 	}
 }
