@@ -72,12 +72,26 @@
 				<textarea class="note-textarea" v-model="formData.note" placeholder="记录感受、提醒或想法…" :maxlength="500" />
 				<text class="form-label" style="margin-top: 32rpx">今日计划</text>
 				<view class="plan-list">
-					<view v-for="(p, idx) in formData.plans" :key="idx" class="plan-item" :class="{ 'plan-done': p.done }" @tap="togglePlan(idx)">
-						<view class="plan-check">
+					<view v-for="(p, idx) in formData.plans" :key="idx" class="plan-item-edit">
+						<view class="plan-check" @tap="togglePlan(idx)">
 							<text v-if="p.done" class="check-mark">✓</text>
 						</view>
 						<text class="plan-text" :class="{ 'plan-text-done': p.done }">{{ p.text }}</text>
+						<view class="plan-delete" @tap="deletePlan(idx)">
+							<text class="plan-delete-icon">×</text>
+						</view>
 					</view>
+				</view>
+				<!-- 添加计划 -->
+				<view class="add-plan-row" v-if="showAddPlan">
+					<input class="add-plan-input" v-model="newPlanText" placeholder="输入计划内容…" :focus="true" @confirm="addPlan" @blur="cancelAddPlan" />
+					<view class="add-plan-btn" @tap="addPlan">
+						<text class="add-plan-btn-text">添加</text>
+					</view>
+				</view>
+				<view v-else class="add-plan-trigger" @tap="showAddPlan = true">
+					<text class="add-plan-icon">+</text>
+					<text class="add-plan-text">添加计划</text>
 				</view>
 			</view>
 
@@ -117,6 +131,9 @@ const formData = ref({
 	plans: []
 })
 
+const showAddPlan = ref(false)
+const newPlanText = ref('')
+
 const titles = {
 	weight: '记录体重',
 	bp: '记录血压',
@@ -149,12 +166,10 @@ watch(() => props.visible, (val) => {
 			symptoms: r.symptoms ? [...r.symptoms] : [],
 			fetal: r.fetal || '0',
 			note: r.note || '',
-			plans: r.plans && r.plans.length ? r.plans.map(p => ({ ...p })) : [
-				{ text: '产检预约', done: false },
-				{ text: '准备待产包', done: false },
-				{ text: '练习呼吸法', done: false }
-			]
+			plans: r.plans && r.plans.length ? r.plans.map(p => ({ ...p })) : []
 		}
+		showAddPlan.value = false
+		newPlanText.value = ''
 	}
 })
 
@@ -174,6 +189,25 @@ function toggleSymptom(s) {
 
 function togglePlan(idx) {
 	formData.value.plans[idx].done = !formData.value.plans[idx].done
+}
+
+function deletePlan(idx) {
+	formData.value.plans.splice(idx, 1)
+}
+
+function addPlan() {
+	const text = newPlanText.value.trim()
+	if (text) {
+		formData.value.plans.push({ text, done: false })
+		newPlanText.value = ''
+		showAddPlan.value = false
+	}
+}
+
+function cancelAddPlan() {
+	if (!newPlanText.value.trim()) {
+		showAddPlan.value = false
+	}
 }
 
 function handleMaskTap() {
@@ -228,6 +262,8 @@ function handleSave() {
 	padding: 0 40rpx 72rpx;
 	max-height: 75vh;
 	overflow-y: auto;
+	box-sizing: border-box;
+	width: 100%;
 }
 
 .sheet-handle {
@@ -357,6 +393,7 @@ function handleSave() {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	box-sizing: border-box;
 }
 
 .mood-active {
@@ -405,12 +442,23 @@ function handleSave() {
 	font-size: 26rpx;
 	color: #1C1A17;
 	line-height: 1.7;
+	box-sizing: border-box;
 }
 
 .plan-list {
 	display: flex;
 	flex-direction: column;
 	gap: 14rpx;
+	margin-bottom: 16rpx;
+}
+
+.plan-item-edit {
+	display: flex;
+	align-items: center;
+	gap: 18rpx;
+	background: #F2F0EE;
+	border-radius: 16rpx;
+	padding: 14rpx 18rpx;
 }
 
 .plan-item {
@@ -451,6 +499,103 @@ function handleSave() {
 	color: #9C9890;
 }
 
+.plan-delete {
+	width: 36rpx;
+	height: 36rpx;
+	border-radius: 50%;
+	background: #E8DDD0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-left: auto;
+}
+
+.plan-delete:active {
+	background: #D4627A;
+}
+
+.plan-delete:active .plan-delete-icon {
+	color: #FFFFFF;
+}
+
+.plan-delete-icon {
+	font-size: 28rpx;
+	color: #9C9890;
+	line-height: 1;
+	font-weight: 300;
+}
+
+.add-plan-row {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+	margin-top: 12rpx;
+}
+
+.add-plan-input {
+	flex: 1;
+	height: 72rpx;
+	background: #F2F0EE;
+	border: 3rpx solid #E8DDD0;
+	border-radius: 16rpx;
+	padding: 0 20rpx;
+	font-size: 26rpx;
+	color: #1C1A17;
+	box-sizing: border-box;
+}
+
+.add-plan-btn {
+	height: 72rpx;
+	padding: 0 28rpx;
+	background: #D4627A;
+	border-radius: 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.add-plan-btn:active {
+	opacity: 0.8;
+}
+
+.add-plan-btn-text {
+	font-size: 24rpx;
+	font-weight: 600;
+	color: #FFFFFF;
+}
+
+.add-plan-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10rpx;
+	height: 72rpx;
+	background: #F2F0EE;
+	border: 3rpx dashed #E8DDD0;
+	border-radius: 16rpx;
+	margin-top: 12rpx;
+	box-sizing: border-box;
+}
+
+.add-plan-trigger:active {
+	background: #E8DDD0;
+}
+
+.add-plan-icon {
+	font-size: 32rpx;
+	color: #D4627A;
+	font-weight: 300;
+	line-height: 1;
+}
+
+.add-plan-text {
+	font-size: 24rpx;
+	color: #D4627A;
+	font-weight: 600;
+}
+
 .save-btn {
 	width: 100%;
 	height: 96rpx;
@@ -461,6 +606,7 @@ function handleSave() {
 	justify-content: center;
 	margin-top: 16rpx;
 	box-shadow: 0 8rpx 32rpx rgba(212, 98, 122, 0.3);
+	box-sizing: border-box;
 }
 
 .save-btn-text {

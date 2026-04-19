@@ -156,6 +156,22 @@
 				"navigationBarTextStyle": "black",
 				"backgroundColor": "#FBF7F2"
 			}
+		},
+		{
+			"path": "pages/guide/weekly-guide",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
+		},
+		{
+			"path": "pages/daily/detail",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#FBF7F2"
+			}
 		}
 	],
 	"globalStyle": {

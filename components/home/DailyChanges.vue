@@ -29,28 +29,34 @@
         :current="currentIndex"
         :duration="300"
         :circular="false"
-        @change="onSwiperChange"
+        @animationfinish="onSwiperChange"
       >
         <swiper-item v-for="(slide, sIdx) in slides" :key="sIdx">
           <view class="slide">
             <view class="ditem-row">
               <!-- Baby change -->
-              <view class="ditem baby">
-                <text class="di-icon">{{ slide.baby.icon }}</text>
-                <text class="di-lbl">BABY</text>
+              <view class="ditem baby" @tap="goDetail">
+                <view class="di-header">
+                  <text class="di-icon">👶</text>
+                  <text class="di-lbl">宝宝</text>
+                </view>
                 <text class="di-text">{{ slide.baby.text }}</text>
               </view>
               <!-- Mom change -->
-              <view class="ditem mom">
-                <text class="di-icon">{{ slide.mom.icon }}</text>
-                <text class="di-lbl">MOM</text>
+              <view class="ditem mom" @tap="goDetail">
+                <view class="di-header">
+                  <text class="di-icon">💆</text>
+                  <text class="di-lbl">妈妈</text>
+                </view>
                 <text class="di-text">{{ slide.mom.text }}</text>
               </view>
             </view>
             <!-- Daily tip -->
             <view class="ditem tip">
-              <text class="di-icon">{{ slide.tip.icon }}</text>
-              <text class="di-lbl">TIP</text>
+              <view class="di-header">
+                <text class="di-icon">{{ slide.tip.icon }}</text>
+                <text class="di-lbl">今日提醒</text>
+              </view>
               <text class="di-text">{{ slide.tip.text }}</text>
             </view>
           </view>
@@ -83,9 +89,9 @@ const props = defineProps({
     type: Date,
     default: () => new Date()
   },
-  healthStore: {
-    type: Object,
-    default: () => null
+  slidesData: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -333,7 +339,46 @@ const WEEKLY_CHANGES = {
   }
 }
 
-// 根据孕周和日期偏移生成幻灯片数据
+// ── 兜底数据（网络异常时使用） ──
+const FALLBACK = [
+  {
+    baby: { icon: '👶', text: '手指甲已完全形成，会自己抓握' },
+    mom: { icon: '💆', text: '腰背酸痛加重，建议用孕妇枕' },
+    tip: { icon: '💡', text: '保持左侧卧，有助于改善胎儿血液供应' }
+  },
+  {
+    baby: { icon: '🫁', text: '肺部继续发育，已能进行呼吸练习' },
+    mom: { icon: '🦵', text: '腿部抽筋常见，睡前补充钙和镁' },
+    tip: { icon: '💡', text: '脚踝水肿若明显加重，应及时告知产科医生' }
+  },
+  {
+    baby: { icon: '👶', text: '宝宝持续成长中，关注每日变化' },
+    mom: { icon: '💆', text: '注意休息，保持好心情' },
+    tip: { icon: '💡', text: '每天记录胎动，保持规律产检' }
+  },
+  {
+    baby: { icon: '🧠', text: '皮下脂肪积累，皮肤越来越圆润' },
+    mom: { icon: '🤱', text: '乳房准备哺乳，初乳开始分泌' },
+    tip: { icon: '💡', text: '开始准备待产包清单，提前列好清单' }
+  },
+  {
+    baby: { icon: '✨', text: '大脑褶皱加深，神经系统快速完善' },
+    mom: { icon: '💤', text: '胎动越来越明显，感受宝宝翻滚' },
+    tip: { icon: '💡', text: '每天数胎动3次，每次1小时' }
+  }
+]
+
+// 将云端数据映射为 slides 格式
+function cloudToSlide(record) {
+  return {
+    baby: { icon: record.baby_icon || '👶', text: record.baby_summary || '' },
+    mom: { icon: record.mom_icon || '💆', text: record.mom_summary || '' },
+    tip: { icon: record.tip_icon || '💡', text: record.tip_text || '' },
+    totalDays: record.total_days
+  }
+}
+
+// 根据孕周和日期偏移生成幻灯片数据（兜底用）
 function getSlideForDay(dayTotal) {
   const week = Math.floor(dayTotal / 7)
   // 查找最近的可用周数据
@@ -355,14 +400,25 @@ function getSlideForDay(dayTotal) {
 }
 
 const slides = computed(() => {
+  // 优先使用云端数据
+  if (props.slidesData && props.slidesData.length > 0) {
+    const baseTotal = props.weekInfo.total
+    const cloudMap = {}
+    for (const r of props.slidesData) {
+      cloudMap[r.total_days] = cloudToSlide(r)
+    }
+    return [-2, -1, 0, 1, 2].map(off => {
+      const dayTotal = baseTotal + off
+      if (dayTotal < 0) return FALLBACK[off + 2]
+      return cloudMap[dayTotal] || FALLBACK[off + 2]
+    })
+  }
+
+  // 降级使用本地数据
   const baseTotal = props.weekInfo.total
-  // 5张幻灯片: 前2天、昨天、今天、明天、后天
   return [-2, -1, 0, 1, 2].map(off => {
     const dayTotal = baseTotal + off
-    if (dayTotal < 0) {
-      // 未怀孕的日期用默认数据
-      return MOCK_DATA[off + 2]
-    }
+    if (dayTotal < 0) return MOCK_DATA[off + 2]
     return getSlideForDay(dayTotal)
   })
 })
@@ -377,6 +433,11 @@ function slideDay(dir) {
 
 function goToday() {
   currentIndex.value = 2
+}
+
+function goDetail() {
+  const total = props.weekInfo.total + offset.value
+  uni.navigateTo({ url: `/pages/daily/detail?totalDays=${total}` })
 }
 
 function onSwiperChange(e) {
@@ -506,63 +567,65 @@ $sh: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
 // ── Swiper slides ──
 .slides-outer {
   width: 100%;
-  height: 420rpx;
+  height: 360rpx;
 }
 
 .slide {
-  padding: 24rpx 24rpx 8rpx;
+  padding: 20rpx 24rpx 20rpx;
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .ditem-row {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .ditem {
   background: $cream;
   border-radius: $r-sm;
-  padding: 20rpx 24rpx;
+  padding: 18rpx 20rpx;
   border: 2rpx solid $cream3;
   transition: transform 0.15s;
 
   &.baby {
     flex: 1;
-    border-left: 6rpx solid $rose;
+    border-left: 5rpx solid $rose;
   }
 
   &.mom {
     flex: 1;
-    border-left: 6rpx solid $sage;
+    border-left: 5rpx solid $sage;
   }
 
   &.tip {
-    border-left: 6rpx solid $amber;
+    border-left: 5rpx solid $amber;
   }
 }
 
-.di-icon {
-  font-size: 40rpx;
-  display: block;
+.di-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
   margin-bottom: 8rpx;
+}
+
+.di-icon {
+  font-size: 32rpx;
 }
 
 .di-lbl {
   font-size: 18rpx;
-  font-weight: 700;
+  font-weight: 600;
   color: $gray400;
   letter-spacing: 2rpx;
-  display: block;
-  margin-bottom: 6rpx;
 }
 
 .di-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: $gray900;
   line-height: 1.5;
-  display: block;
 }
 
 // ── Pagination dots ──

@@ -315,7 +315,7 @@ function onSelectDate(date) {
 /* ── Card ── */
 .cal-card {
   background: #ffffff;
-  margin: 20rpx 0 0;
+  margin: 20rpx 24rpx 0;
   border-radius: 32rpx;
   box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
   overflow: hidden;

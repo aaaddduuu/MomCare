@@ -26,14 +26,17 @@
 				<text class="note-text">{{ currentNote }}</text>
 			</view>
 
-			<!-- 计划列表 -->
+			<!-- 今日计划列表 -->
+			<view class="section-title" v-if="hasPlans">
+				<text class="section-title-text">今日计划</text>
+			</view>
 			<view class="plan-list" v-if="hasPlans">
 				<view
 					v-for="(plan, idx) in currentPlans"
-					:key="idx"
+					:key="'today-' + idx"
 					class="plan-item"
 					:class="{ 'plan-done': plan.done }"
-					@tap="togglePlan(idx)"
+					@tap="toggleTodayPlan(idx)"
 				>
 					<view class="plan-check">
 						<text v-if="plan.done" class="check-mark">✓</text>
@@ -42,21 +45,82 @@
 				</view>
 			</view>
 
+			<!-- 历史计划区域 -->
+			<view class="history-section" v-if="hasHistoryPlans">
+				<view class="section-header">
+					<text class="section-title-text">历史计划</text>
+					<text class="section-subtitle">{{ historyPlanCount }}条记录</text>
+				</view>
+
+				<!-- 历史计划列表 -->
+				<view class="history-list">
+					<view
+						v-for="(group, gIdx) in historyPlanGroups"
+						:key="'group-' + gIdx"
+						class="history-group"
+					>
+						<!-- 日期头部 -->
+						<view
+							class="history-header"
+							:class="{ 'history-header-expanded': group.expanded }"
+							@tap="toggleGroup(gIdx)"
+						>
+							<view class="history-header-left">
+								<view class="history-dot" :class="{ 'history-dot-all-done': group.allDone }"></view>
+								<view class="history-header-info">
+									<text class="history-date">{{ group.dateDisplay }}</text>
+									<text class="history-week">{{ group.weekDisplay }}</text>
+								</view>
+							</view>
+							<view class="history-header-right">
+								<view class="history-progress">
+									<text class="history-progress-text">{{ group.completedCount }}/{{ group.totalCount }}</text>
+								</view>
+								<text class="history-arrow" :class="{ 'history-arrow-up': group.expanded }">›</text>
+							</view>
+						</view>
+
+						<!-- 展开的计划列表 -->
+						<view class="history-plans" v-if="group.expanded">
+							<view
+								v-for="(plan, pIdx) in group.plans"
+								:key="'plan-' + gIdx + '-' + pIdx"
+								class="history-plan-item"
+								:class="{ 'plan-done': plan.done }"
+								@tap.stop="toggleHistoryPlan(gIdx, pIdx)"
+							>
+								<view class="plan-check">
+									<text v-if="plan.done" class="check-mark">✓</text>
+								</view>
+								<text class="plan-text" :class="{ 'plan-text-done': plan.done }">{{ plan.text }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+
 			<!-- 空状态 -->
-			<view class="empty-state" v-if="!hasPlans && !currentNote">
+			<view class="empty-state" v-if="!hasPlans && !hasHistoryPlans && !currentNote">
 				<view class="empty-icon">📋</view>
-				<text class="empty-title">暂无今日计划</text>
-				<text class="empty-desc">在首页日历中选择今日，记录你的计划吧</text>
+				<text class="empty-title">暂无计划记录</text>
+				<text class="empty-desc">在首页日历中选择日期，记录你的计划吧</text>
 				<view class="empty-btn" @tap="goHome">
 					<text class="empty-btn-text">去首页记录</text>
 				</view>
 			</view>
 
-			<!-- 仅备注无计划 -->
-			<view class="empty-state" v-if="!hasPlans && currentNote">
+			<!-- 仅今日有备注 -->
+			<view class="empty-state" v-if="!hasPlans && !hasHistoryPlans && currentNote">
 				<view class="empty-icon">✅</view>
 				<text class="empty-title">今日已记录备注</text>
 				<text class="empty-desc">可以在首页添加计划事项</text>
+			</view>
+
+			<!-- 今日无计划但有历史 -->
+			<view class="empty-state" v-if="!hasPlans && hasHistoryPlans">
+				<view class="empty-icon">📝</view>
+				<text class="empty-title">暂无今日计划</text>
+				<text class="empty-desc">查看下方历史计划或在首页添加今日计划</text>
 			</view>
 
 			<view class="bottom-spacer"></view>
@@ -70,6 +134,9 @@ import { useHealthStore } from '@/stores/health.js'
 import NavBar from '@/components/NavBar.vue'
 
 const healthStore = useHealthStore()
+
+// 历史计划组的展开状态
+const historyPlanGroups = ref([])
 
 // 今日日期显示
 const todayDateDisplay = computed(() => {
@@ -119,11 +186,116 @@ const currentNote = computed(() => {
 	return record?.note || ''
 })
 
-// 切换计划完成状态
-function togglePlan(idx) {
+// 获取历史计划（排除今天）
+const historyPlans = computed(() => {
+	const records = healthStore.records || {}
+	const today = new Date()
+	const todayKey = healthStore.getRecordKey(today)
+
+	const history = []
+
+	for (const [dateKey, record] of Object.entries(records)) {
+		// 跳过今天
+		if (dateKey === todayKey) continue
+
+		// 只包含有计划的记录
+		if (record.plans && record.plans.length > 0) {
+			const date = new Date(dateKey)
+			const weekInfo = healthStore.getWeekInfo(date)
+
+			history.push({
+				dateKey,
+				date,
+				plans: record.plans,
+				weekInfo,
+				note: record.note || ''
+			})
+		}
+	}
+
+	// 按日期倒序排列
+	return history.sort((a, b) => b.date - a.date)
+})
+
+// 是否有历史计划
+const hasHistoryPlans = computed(() => {
+	return historyPlans.value.length > 0
+})
+
+// 历史计划总数（记录条数）
+const historyPlanCount = computed(() => {
+	return historyPlans.value.length
+})
+
+// 构建历史计划组
+function buildHistoryGroups() {
+	const groups = historyPlans.value.map(item => {
+		const totalCount = item.plans.length
+		const completedCount = item.plans.filter(p => p.done).length
+		const allDone = completedCount === totalCount && totalCount > 0
+
+		// 日期显示
+		const date = item.date
+		const today = new Date()
+		const yesterday = new Date(today)
+		yesterday.setDate(yesterday.getDate() - 1)
+
+		let dateDisplay = ''
+		if (date.toDateString() === yesterday.toDateString()) {
+			dateDisplay = '昨天'
+		} else {
+			const m = date.getMonth() + 1
+			const d = date.getDate()
+			const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+			dateDisplay = `${m}月${d}日 · ${weekDays[date.getDay()]}`
+		}
+
+		// 周数显示
+		const weekInfo = item.weekInfo
+		const weekDisplay = weekInfo ? `孕${weekInfo.week}周${weekInfo.day}天` : ''
+
+		return {
+			dateKey: item.dateKey,
+			dateDisplay,
+			weekDisplay,
+			plans: item.plans,
+			totalCount,
+			completedCount,
+			allDone,
+			note: item.note,
+			expanded: false
+		}
+	})
+
+	historyPlanGroups.value = groups
+}
+
+// 切换今日计划完成状态
+function toggleTodayPlan(idx) {
 	const plans = [...currentPlans.value]
 	plans[idx].done = !plans[idx].done
 	healthStore.saveRecord(new Date(), { plans })
+}
+
+// 切换历史计划组展开状态
+function toggleGroup(gIdx) {
+	historyPlanGroups.value[gIdx].expanded = !historyPlanGroups.value[gIdx].expanded
+}
+
+// 切换历史计划完成状态
+function toggleHistoryPlan(gIdx, pIdx) {
+	const group = historyPlanGroups.value[gIdx]
+	const plans = [...group.plans]
+	plans[pIdx].done = !plans[pIdx].done
+
+	// 保存到对应的日期
+	const date = new Date(group.dateKey)
+	healthStore.saveRecord(date, { plans })
+
+	// 更新组状态
+	group.plans = plans
+	group.completedCount = plans.filter(p => p.done).length
+	group.allDone = group.completedCount === group.totalCount
 }
 
 // 跳转到首页
@@ -133,6 +305,7 @@ function goHome() {
 
 onMounted(() => {
 	console.log('[daily-plan] page onMounted')
+	buildHistoryGroups()
 })
 </script>
 
@@ -142,7 +315,7 @@ page {
 	--rose-light: #FDEEF1;
 	--rose-mid: #E07898;
 	--rose-pale: #F4C0CC;
-	--green: #4CAF82;
+	--green: #7BA08C;
 	--green-light: #EAF7EF;
 	--gray-50: #FAF9F8;
 	--gray-100: #F2F0EE;
@@ -164,7 +337,7 @@ page {
 .hero {
 	flex-shrink: 0;
 	background: linear-gradient(155deg, #C45070 0%, #E07898 40%, #F4C0CC 100%);
-	border-radius: 0 0 40rpx 40rpx;
+	position: relative;
 	overflow: hidden;
 }
 
@@ -229,6 +402,17 @@ page {
 	padding-bottom: 20rpx;
 }
 
+/* ── Section Title ── */
+.section-title {
+	padding: 32rpx 24rpx 16rpx;
+}
+
+.section-title-text {
+	font-size: 32rpx;
+	font-weight: 600;
+	color: #1C1A17;
+}
+
 /* ── Note Card ── */
 .note-card {
 	background: #FFFFFF;
@@ -257,7 +441,7 @@ page {
 
 /* ── Plan List ── */
 .plan-list {
-	padding: 24rpx 24rpx 0;
+	padding: 0 24rpx 24rpx;
 }
 
 .plan-item {
@@ -311,6 +495,139 @@ page {
 .plan-text-done {
 	text-decoration: line-through;
 	color: #9C9890;
+}
+
+/* ── History Section ── */
+.history-section {
+	padding: 0 24rpx 24rpx;
+}
+
+.section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 32rpx 0 16rpx;
+}
+
+.section-subtitle {
+	font-size: 24rpx;
+	color: #9C9890;
+}
+
+.history-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12rpx;
+}
+
+.history-group {
+	background: #FFFFFF;
+	border-radius: 24rpx;
+	box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
+	overflow: hidden;
+}
+
+/* ── History Header ── */
+.history-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 24rpx 28rpx;
+	transition: background 0.2s;
+}
+
+.history-header:active {
+	background: #FAF9F8;
+}
+
+.history-header-left {
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+	flex: 1;
+}
+
+.history-dot {
+	width: 12rpx;
+	height: 12rpx;
+	border-radius: 50%;
+	background: #E8DDD0;
+	flex-shrink: 0;
+}
+
+.history-dot-all-done {
+	background: #7BA08C;
+}
+
+.history-header-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4rpx;
+}
+
+.history-date {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #1C1A17;
+}
+
+.history-week {
+	font-size: 24rpx;
+	color: #9C9890;
+}
+
+.history-header-right {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.history-progress {
+	background: #FAF9F8;
+	border-radius: 20rpx;
+	padding: 6rpx 16rpx;
+}
+
+.history-progress-text {
+	font-size: 24rpx;
+	font-weight: 600;
+	color: #7BA08C;
+}
+
+.history-arrow {
+	font-size: 32rpx;
+	color: #C8C8C8;
+	transition: transform 0.3s;
+}
+
+.history-arrow-up {
+	transform: rotate(90deg);
+}
+
+/* ── History Plans (Expanded) ── */
+.history-plans {
+	padding: 0 28rpx 24rpx;
+	background: #FAF9F8;
+}
+
+.history-plan-item {
+	background: #FFFFFF;
+	border-radius: 16rpx;
+	padding: 20rpx 24rpx;
+	margin-bottom: 12rpx;
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+	transition: all 0.2s;
+}
+
+.history-plan-item:last-child {
+	margin-bottom: 0;
+}
+
+.history-plan-item:active {
+	opacity: 0.85;
+	transform: scale(0.98);
 }
 
 /* ── Empty State ── */

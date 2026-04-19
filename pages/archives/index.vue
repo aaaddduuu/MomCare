@@ -942,8 +942,7 @@ page {
 .fab-btn {
   position: fixed;
   right: 32rpx;
-  bottom: 160rpx;
-  bottom: calc(160rpx + env(safe-area-inset-bottom));
+  bottom: calc(80rpx + env(safe-area-inset-bottom));
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;

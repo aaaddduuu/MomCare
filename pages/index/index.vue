@@ -24,7 +24,7 @@
 				<DailyChanges
 					:weekInfo="healthStore.todayWeekInfo"
 					:selectedDate="selectedDate"
-					:healthStore="healthStore"
+					:slidesData="dailySlides"
 				/>
 
 				<!-- 本周指南卡片 -->
@@ -86,6 +86,7 @@ const loading = ref(true)
 const selectedDate = ref(new Date())
 const editVisible = ref(false)
 const editMode = ref('weight')
+const dailySlides = ref([]) // 每日变化云端数据
 
 const greeting = computed(() => healthStore.getGreeting())
 
@@ -95,14 +96,40 @@ const currentRecord = computed(() => {
 
 onMounted(async () => {
 	try {
-		await healthStore.loadUserProfile()
-		await healthStore.loadRecords()
+		const [_, __] = await Promise.all([
+			healthStore.loadUserProfile(),
+			healthStore.loadRecords()
+		])
+		// 预取每日变化摘要数据（与 loading 解耦，不阻塞首页渲染）
+		loadDailySlides()
 	} catch (e) {
 		console.error('首页数据加载失败:', e)
 	} finally {
 		loading.value = false
 	}
 })
+
+async function loadDailySlides() {
+	const wi = healthStore.todayWeekInfo
+	if (!wi) return
+	const todayTotal = wi.total
+	const minDay = Math.max(0, todayTotal - 2)
+	const maxDay = todayTotal + 2
+	try {
+		const db = uniCloud.database()
+		const res = await db.collection('pregnancy_daily')
+			.where(`total_days >= ${minDay} && total_days <= ${maxDay}`)
+			.field('total_days,baby_icon,baby_summary,mom_icon,mom_summary,tip_icon,tip_text')
+			.orderBy('total_days', 'asc')
+			.limit(5)
+			.get()
+		if (res.result && res.result.data) {
+			dailySlides.value = res.result.data
+		}
+	} catch (e) {
+		console.warn('每日变化数据预取失败，使用兜底数据:', e)
+	}
+}
 
 function onSelectDate(date) {
 	selectedDate.value = new Date(date)

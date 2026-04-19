@@ -14,9 +14,10 @@
 				<text class="dp-chip-text">{{ trimesterName }}</text>
 			</view>
 		</view>
-		<view class="rec-grid">
+		<!-- 水平一行：体重、血压、心情、胎动 -->
+		<view class="rec-row">
 			<!-- 体重 -->
-			<view class="rec-item" :class="{ 'rec-item-filled': !!record.weight }" @tap="$emit('edit', 'weight')">
+			<view class="rec-item rec-item-compact" :class="{ 'rec-item-filled': !!record.weight }" @tap="$emit('edit', 'weight')">
 				<view class="ri-top">
 					<text class="ri-icon">⚖️</text>
 					<text class="ri-edit-hint">编辑</text>
@@ -29,7 +30,7 @@
 				<text v-else class="ri-empty">未记录</text>
 			</view>
 			<!-- 血压 -->
-			<view class="rec-item" :class="{ 'rec-item-filled': !!record.bp }" @tap="$emit('edit', 'bp')">
+			<view class="rec-item rec-item-compact" :class="{ 'rec-item-filled': !!record.bp }" @tap="$emit('edit', 'bp')">
 				<view class="ri-top">
 					<text class="ri-icon">💗</text>
 					<text class="ri-edit-hint">编辑</text>
@@ -37,12 +38,11 @@
 				<text class="ri-label">血压</text>
 				<view v-if="record.bp" class="ri-value-row">
 					<text class="ri-value-sm">{{ record.bp }}</text>
-					<text class="ri-unit">mmHg</text>
 				</view>
 				<text v-else class="ri-empty">未记录</text>
 			</view>
 			<!-- 心情 -->
-			<view class="rec-item" :class="{ 'rec-item-filled': !!record.mood }" @tap="$emit('edit', 'daily')">
+			<view class="rec-item rec-item-compact" :class="{ 'rec-item-filled': !!record.mood }" @tap="$emit('edit', 'daily')">
 				<view class="ri-top">
 					<text class="ri-icon">😊</text>
 					<text class="ri-edit-hint">编辑</text>
@@ -52,7 +52,7 @@
 				<text v-else class="ri-empty">未记录</text>
 			</view>
 			<!-- 胎动 -->
-			<view class="rec-item" :class="{ 'rec-item-filled': !!record.fetal }" @tap="$emit('edit', 'fetal')">
+			<view class="rec-item rec-item-compact" :class="{ 'rec-item-filled': !!record.fetal }" @tap="$emit('edit', 'fetal')">
 				<view class="ri-top">
 					<text class="ri-icon">👣</text>
 					<text class="ri-edit-hint">编辑</text>
@@ -64,7 +64,9 @@
 				</view>
 				<text v-else class="ri-empty">未记录</text>
 			</view>
-			<!-- 备注 -->
+		</view>
+		<!-- 备注/计划 独占一行 -->
+		<view class="rec-note-row">
 			<view class="rec-item rec-item-full" :class="{ 'rec-item-filled': !!record.note }" @tap="$emit('edit', 'note')">
 				<view class="ri-top">
 					<text class="ri-icon">📝</text>
@@ -152,15 +154,17 @@ const weekLabel = computed(() => {
 }
 
 .today-badge {
-	background: #D4627A;
-	padding: 4rpx 14rpx;
+	font-size: 20rpx;
+	font-weight: 600;
+	padding: 4rpx 16rpx;
 	border-radius: 999rpx;
+	background: #FAEAEE;
 }
 
 .today-badge-text {
-	font-size: 18rpx;
-	font-weight: 700;
-	color: #FFFFFF;
+	font-size: 20rpx;
+	font-weight: 600;
+	color: #D4627A;
 }
 
 .dp-week {
@@ -195,11 +199,19 @@ const weekLabel = computed(() => {
 	font-size: 20rpx;
 }
 
-.rec-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 14rpx;
-	padding: 16rpx 20rpx;
+.rec-row {
+	display: flex;
+	gap: 12rpx;
+	padding: 16rpx 20rpx 0;
+}
+
+.rec-note-row {
+	padding: 12rpx 20rpx 16rpx;
+}
+
+.rec-item-compact {
+	flex: 1;
+	min-width: 0;
 }
 
 .rec-item {
@@ -208,6 +220,7 @@ const weekLabel = computed(() => {
 	border: 3rpx solid #E8DDD0;
 	padding: 18rpx 22rpx;
 	transition: all 0.15s;
+	box-sizing: border-box;
 }
 
 .rec-item-filled {
@@ -215,7 +228,7 @@ const weekLabel = computed(() => {
 }
 
 .rec-item-full {
-	grid-column: 1 / -1;
+	width: 100%;
 }
 
 .ri-top {

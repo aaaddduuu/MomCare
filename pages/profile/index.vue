@@ -80,8 +80,9 @@ function showLoginPopup() {
 }
 
 function onLoginSuccess() {
-	// 登录成功后加载云端数据
-	healthStore.loadUserProfile()
+	// 登录成功后不需要重新加载用户资料
+	// LoginPopup 已经更新了 userInfo，saveUserProfile 已保存到云端
+	// silentLogin() 中也已经加载过用户资料，无需再次加载
 }
 
 // 孕期信息

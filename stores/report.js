@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useHealthStore } from '@/stores/health.js'
 
 // 报告类型映射
 export const REPORT_TYPES = [
@@ -69,6 +70,10 @@ function mapChineseTypeToKey(chineseType) {
 }
 
 export const useReportStore = defineStore('report', () => {
+  // Import health store for login state
+  // Note: No circular dependency exists - health.js doesn't import report.js
+  let healthStore = null
+
   // ── State ──
   const reports = ref([])          // 已归档报告列表
   const unarchivedReports = ref([]) // 未归档报告列表
@@ -191,12 +196,30 @@ export const useReportStore = defineStore('report', () => {
 
   // ── Actions ──
 
+  // Helper: Get health store and check login
+  function getHealthStore() {
+    if (!healthStore) {
+      healthStore = useHealthStore()
+    }
+    return healthStore
+  }
+
+  function checkLogin() {
+    const store = getHealthStore()
+    if (!store.isLoggedIn) {
+      throw new Error('用户未登录')
+    }
+    // Use openid as user_id since we're using custom login
+    return store.openid
+  }
+
   // 查询已归档报告
   async function fetchReports() {
     try {
+      const userId = checkLogin()
       const db = uniCloud.database()
       const res = await db.collection('momcare_reports')
-        .where({ archive_status: 'archived' })
+        .where({ archive_status: 'archived', user_id: userId })
         .orderBy('create_time', 'desc')
         .get()
       if (res.result && res.result.data) {
@@ -219,9 +242,10 @@ export const useReportStore = defineStore('report', () => {
   // 查询未归档报告
   async function fetchUnarchivedReports() {
     try {
+      const userId = checkLogin()
       const db = uniCloud.database()
       const res = await db.collection('momcare_reports')
-        .where({ archive_status: 'unarchived' })
+        .where({ archive_status: 'unarchived', user_id: userId })
         .orderBy('create_time', 'desc')
         .get()
       if (res.result && res.result.data) {
@@ -246,8 +270,9 @@ export const useReportStore = defineStore('report', () => {
       return null
     }
     try {
+      const userId = checkLogin()
       const record = {
-        user_id: 'default_user',
+        user_id: userId,
         report_type: data.report_type,
         report_name: data.report_name || getTypeInfo(data.report_type).label,
         file_urls: data.file_urls || [],

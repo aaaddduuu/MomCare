@@ -130,7 +130,7 @@ page {
 .hero {
   flex-shrink: 0;
   background: linear-gradient(155deg, #3A70A8 0%, #5B8FC9 45%, #A0C8F0 100%);
-  border-radius: 0 0 40rpx 40rpx;
+  position: relative;
   overflow: hidden;
 }
 

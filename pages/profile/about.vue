@@ -53,8 +53,8 @@
 				</view>
 			</view>
 
-			<!-- 法律信息 -->
-			<view class="section">
+			<!-- 法律信息 (暂时隐藏) -->
+			<view class="section" v-if="false">
 				<text class="section-lbl">法律信息</text>
 				<view class="legal-card">
 					<view class="legal-row" @tap="openLink('privacy')">
@@ -72,8 +72,8 @@
 				</view>
 			</view>
 
-			<!-- 联系我们 -->
-			<view class="section">
+			<!-- 联系我们 (暂时隐藏) -->
+			<view class="section" v-if="false">
 				<text class="section-lbl">联系我们</text>
 				<view class="contact-card">
 					<view class="contact-row">

@@ -191,7 +191,6 @@ onMounted(async () => {
 
 .hero-rose {
 	background: linear-gradient(155deg, #C45070 0%, #E07898 40%, #F4C0CC 100%);
-	padding: 0 36rpx 40rpx;
 	flex-shrink: 0;
 	position: relative;
 	overflow: hidden;
@@ -206,6 +205,7 @@ onMounted(async () => {
 }
 
 .hero-content {
+	padding: 0 36rpx 40rpx;
 	position: relative;
 	z-index: 1;
 }

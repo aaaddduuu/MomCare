@@ -1,73 +1,72 @@
 <template>
   <view class="page">
-    <!-- Hero -->
-    <view class="hero">
-      <!-- NavBar (dark theme for white text/icons) -->
-      <NavBar title="待产包清单" theme="dark" class="hero-navbar" />
-
-      <!-- Hero Content -->
-      <view class="hero-content">
-        <text class="hero-label">已完成</text>
-        <text class="hero-number">{{ doneCount }} / {{ totalCount }} 项</text>
-        <text class="hero-sub">还剩 {{ totalCount - doneCount }} 项待准备 · 距预产期 {{ daysUntilDue }} 天</text>
-      </view>
-    </view>
-
-    <!-- Progress Card -->
-    <view class="progress-card">
-      <view class="progress-row">
-        <text class="progress-label">总体进度</text>
-        <text class="progress-percent">{{ progressPercent }}%</text>
-      </view>
-      <view class="progress-track">
-        <view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
-      </view>
-    </view>
-
-    <!-- Category Filter Strip -->
-    <scroll-view scroll-x class="filter-scroll" :show-scrollbar="false">
-      <view class="filter-row">
-        <view
-          v-for="cat in categoryFilters"
-          :key="cat.key"
-          class="filter-btn"
-          :class="{ 'filter-btn-active': activeCategory === cat.key }"
-          @tap="activeCategory = cat.key"
-        >
-          <text class="filter-text" :class="{ 'filter-text-active': activeCategory === cat.key }">
-            {{ cat.name }} {{ cat.count }}
-          </text>
+    <!-- Single scroll container for everything -->
+    <scroll-view scroll-y class="scroll-full" :show-scrollbar="false">
+      <!-- Hero (scrolls with content) -->
+      <view class="hero">
+        <NavBar title="待产包清单" theme="dark" :showBack="true" />
+        <view class="hero-content">
+          <text class="hero-label">已完成</text>
+          <text class="hero-number">{{ doneCount }} / {{ totalCount }} 项</text>
+          <text class="hero-sub">还剩 {{ totalCount - doneCount }} 项待准备 · 距预产期 {{ daysUntilDue }} 天</text>
         </view>
       </view>
-    </scroll-view>
 
-    <!-- Checklist Sections -->
-    <scroll-view scroll-y class="checklist-scroll">
-      <template v-for="section in filteredSections" :key="section.key">
-        <view class="section-header">
-          <text class="section-title">{{ section.name }}</text>
-          <text class="section-count">{{ section.doneCount }}/{{ section.totalCount }}</text>
-        </view>
-        <view
-          v-for="(item, idx) in section.items"
-          :key="idx"
-          class="check-item"
-          :class="{ 'check-item-done': item.done }"
-          @tap="toggleItem(item)"
-          @longpress="handleLongPress(item)"
-        >
-          <!-- Checkbox -->
-          <view class="checkbox" :class="{ 'checkbox-checked': item.done }">
-            <text v-if="item.done" class="checkbox-tick">✓</text>
+      <!-- Content Body -->
+      <view class="content-body">
+        <!-- Progress Card -->
+        <view class="progress-card">
+          <view class="progress-row">
+            <text class="progress-label">总体进度</text>
+            <text class="progress-percent">{{ progressPercent }}%</text>
           </view>
-          <!-- Text -->
-          <text class="check-text" :class="{ 'check-text-done': item.done }">{{ item.text }}</text>
-          <!-- Category Badge -->
-          <text class="cat-badge" :class="[badgeClass(item.category), { 'cat-badge-faded': item.done }]">
-            {{ badgeLabel(item.category) }}
-          </text>
+          <view class="progress-track">
+            <view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
+          </view>
         </view>
-      </template>
+
+        <!-- Category Filter Strip (plain flex, no nested scroll-view) -->
+        <view class="filter-row">
+          <view
+            v-for="cat in categoryFilters"
+            :key="cat.key"
+            class="filter-btn"
+            :class="{ 'filter-btn-active': activeCategory === cat.key }"
+            @tap="activeCategory = cat.key"
+          >
+            <text class="filter-text" :class="{ 'filter-text-active': activeCategory === cat.key }">
+              {{ cat.name }} {{ cat.count }}
+            </text>
+          </view>
+        </view>
+
+        <!-- Checklist Sections -->
+        <template v-for="section in filteredSections" :key="section.key">
+          <view class="section-header">
+            <text class="section-title">{{ section.name }}</text>
+            <text class="section-count">{{ section.doneCount }}/{{ section.totalCount }}</text>
+          </view>
+          <view
+            v-for="(item, idx) in section.items"
+            :key="idx"
+            class="check-item"
+            :class="{ 'check-item-done': item.done }"
+            @tap="toggleItem(item)"
+            @longpress="handleLongPress(item)"
+          >
+            <!-- Checkbox -->
+            <view class="checkbox" :class="{ 'checkbox-checked': item.done }">
+              <text v-if="item.done" class="checkbox-tick">✓</text>
+            </view>
+            <!-- Text -->
+            <text class="check-text" :class="{ 'check-text-done': item.done }">{{ item.text }}</text>
+            <!-- Category Badge -->
+            <text class="cat-badge" :class="[badgeClass(item.category), { 'cat-badge-faded': item.done }]">
+              {{ badgeLabel(item.category) }}
+            </text>
+          </view>
+        </template>
+      </view>
 
       <view class="bottom-spacer"></view>
     </scroll-view>
@@ -338,18 +337,24 @@ function badgeLabel(category) {
   box-sizing: border-box;
 }
 
-/* ── Hero ── */
-.hero {
-  background: linear-gradient(155deg, #8A5818 0%, #C98A3A 45%, #F0C878 100%);
-  padding-bottom: 48rpx;
-  flex-shrink: 0;
+/* ── Single scroll container ── */
+.scroll-full {
+  flex: 1;
 }
 
-.hero-navbar :deep(.nav-bar-dark) {
+/* ── Hero (inside scroll) ── */
+.hero {
+  background: linear-gradient(155deg, #8A5818 0%, #C98A3A 45%, #F0C878 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* NavBar 透明覆盖 */
+.hero :deep(.nav-bar-dark) {
   background: transparent;
 }
 
-.hero-navbar :deep(.status-bar-dark) {
+.hero :deep(.status-bar-dark) {
   background: transparent;
 }
 
@@ -357,16 +362,20 @@ function badgeLabel(category) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32rpx 32rpx 0;
+  padding: 0 36rpx 40rpx;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-label {
+  display: block;
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.75);
   margin-bottom: 8rpx;
 }
 
 .hero-number {
+  display: block;
   font-size: 56rpx;
   font-weight: 700;
   color: #FFFFFF;
@@ -375,20 +384,24 @@ function badgeLabel(category) {
 }
 
 .hero-sub {
+  display: block;
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.65);
 }
 
+/* ── Content Body (below hero) ── */
+.content-body {
+  padding: 28rpx 28rpx 0;
+  box-sizing: border-box;
+}
+
 /* ── Progress Card ── */
 .progress-card {
-  margin: -24rpx 32rpx 0;
   background: #FFFFFF;
-  border-radius: 24rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
   padding: 28rpx 32rpx;
-  box-shadow: 0 8rpx 32rpx rgba(60, 30, 10, 0.10);
-  position: relative;
-  z-index: 10;
-  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .progress-row {
@@ -424,16 +437,11 @@ function badgeLabel(category) {
   transition: width 0.3s ease;
 }
 
-/* ── Filter Strip ── */
-.filter-scroll {
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding: 24rpx 0 12rpx;
-}
-
+/* ── Filter Strip (plain flex, no scroll-view) ── */
 .filter-row {
-  display: inline-flex;
-  padding: 0 32rpx;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 24rpx 0 12rpx;
   gap: 16rpx;
 }
 
@@ -445,7 +453,6 @@ function badgeLabel(category) {
   padding: 0 28rpx;
   border-radius: 999rpx;
   background: #F2F0EE;
-  flex-shrink: 0;
 }
 
 .filter-btn-active {
@@ -463,24 +470,18 @@ function badgeLabel(category) {
   color: #FFFFFF;
 }
 
-/* ── Checklist Scroll ── */
-.checklist-scroll {
-  flex: 1;
-  padding: 0 32rpx;
-}
-
 /* ── Section Header ── */
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28rpx 8rpx 16rpx;
+  padding: 28rpx 0 12rpx;
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
-  color: #3A3834;
+  color: #1C1A17;
 }
 
 .section-count {
@@ -495,10 +496,15 @@ function badgeLabel(category) {
   align-items: center;
   background: #FFFFFF;
   border-radius: 20rpx;
-  padding: 24rpx 28rpx;
+  box-shadow: 0 4rpx 28rpx rgba(60, 30, 10, 0.07);
+  padding: 24rpx 26rpx;
   margin-bottom: 16rpx;
   gap: 20rpx;
-  box-shadow: 0 2rpx 16rpx rgba(60, 30, 10, 0.05);
+}
+
+.check-item:active {
+  opacity: 0.85;
+  transform: scale(0.98);
 }
 
 .check-item-done {
@@ -520,8 +526,8 @@ function badgeLabel(category) {
 }
 
 .checkbox-checked {
-  background: #C98A3A;
-  border-color: #C98A3A;
+  background: #7BA08C;
+  border-color: #7BA08C;
 }
 
 .checkbox-tick {
@@ -581,14 +587,14 @@ function badgeLabel(category) {
 
 /* ── Bottom Spacer ── */
 .bottom-spacer {
-  height: 160rpx;
+  height: calc(180rpx + env(safe-area-inset-bottom));
 }
 
 /* ── FAB ── */
 .fab {
   position: fixed;
-  right: 40rpx;
-  bottom: 80rpx;
+  right: 32rpx;
+  bottom: calc(80rpx + env(safe-area-inset-bottom));
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
@@ -632,6 +638,7 @@ function badgeLabel(category) {
   border-radius: 32rpx 32rpx 0 0;
   padding: 40rpx 36rpx;
   padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .sheet-title {
