@@ -1,0 +1,25 @@
+node_modules/
+unpackage/
+.hbuilderx/
+.DS_Store
+openspec/
+
+# IDE/Tool configs
+.claude/
+.opencode/
+.trae/
+
+# Environment variables - NEVER commit real API keys
+.env
+**/.env
+
+# Backend / API (private)
+worker/
+utils/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
+manifest.json

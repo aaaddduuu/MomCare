@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "pinia": "^2.1.7"
+  },
+  "devDependencies": {
+    "wrangler": "^4.88.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  }
+}
