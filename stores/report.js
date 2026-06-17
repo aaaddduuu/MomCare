@@ -571,7 +571,14 @@ export const useReportStore = defineStore('report', () => {
       uni.showToast({ title: '报告不存在', icon: 'none' })
       return false
     }
+    const health = getHealthStore()
+    if (!health.canUseAiInterpret()) {
+      uni.showToast({ title: '今日 5 次 AI 解读已用完，明天再来吧', icon: 'none', duration: 3000 })
+      return false
+    }
 
+    const previousAiStatus = report.ai_status || 'pending'
+    const previousOcrStatus = report.ocr_status || 'pending'
     _updateReportField(reportId, { ai_status: 'processing', ocr_status: 'processing' })
 
     try {
@@ -587,6 +594,11 @@ export const useReportStore = defineStore('report', () => {
       uni.hideLoading()
 
       if (res.statusCode !== 200 || res.data.code !== 0) {
+        if (res.statusCode === 429 || res.data?.code === 429 || /次数|配额|quota|limit/i.test(res.data?.msg || '')) {
+          _updateReportField(reportId, { ai_status: previousAiStatus, ocr_status: previousOcrStatus })
+          uni.showToast({ title: res.data?.msg || '今日解读次数已用完，明天再来吧', icon: 'none', duration: 3000 })
+          return false
+        }
         throw new Error(res.data?.msg || 'AI 解读请求失败')
       }
 
@@ -602,12 +614,23 @@ export const useReportStore = defineStore('report', () => {
         is_abnormal: (aiData.abnormal_indicators || []).some(i => i.severity === 'danger' || i.severity === 'warning'),
         ai_type_guess: aiData.report_type || '',
       })
+      if (aiData.quota) {
+        health.updateAiInterpretQuota(aiData.quota)
+      } else {
+        await health.consumeAiInterpretQuota()
+      }
 
       uni.showToast({ title: '解读完成', icon: 'success' })
       return true
     } catch (err) {
       console.error('AI pipeline failed:', err)
       uni.hideLoading()
+      const errMsg = err?.data?.msg || err?.message || ''
+      if (err?.statusCode === 429 || err?.data?.code === 429 || /次数|配额|quota|limit/i.test(errMsg)) {
+        _updateReportField(reportId, { ai_status: previousAiStatus, ocr_status: previousOcrStatus })
+        uni.showToast({ title: errMsg || '今日解读次数已用完，明天再来吧', icon: 'none', duration: 3000 })
+        return false
+      }
       _updateReportField(reportId, { ai_status: 'failed', ocr_status: 'failed' })
 
       if (err.errMsg && err.errMsg.includes('timeout')) {

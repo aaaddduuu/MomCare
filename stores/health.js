@@ -173,6 +173,7 @@ export function getFruitComparison(week) {
 
 // ── 本地存储辅助 ──
 const STORAGE_KEY = 'YUNTU_HEALTH_DATA'
+const AI_INTERPRET_DAILY_LIMIT = 5
 
 function _loadStorage() {
 	try {
@@ -202,7 +203,8 @@ function _migrateOldKeys() {
 		userInfo: { nickname: '', avatar: '🌸', hospital: '', babyNickname: '' },
 		records: {},
 		checkupSchedules: [],
-		openid: ''
+		openid: '',
+		aiInterpretUsage: null
 	}
 
 	try {
@@ -245,16 +247,22 @@ export const useHealthStore = defineStore('health', () => {
 	const checkupSchedules = ref([])
 	const isLoggedIn = ref(false)
 	const openid = ref('')
+	const aiInterpretUsage = ref({
+		date: '',
+		used: 0
+	})
 
 	// ── Persist helper: serialize current state to localStorage ──
 	function _persist() {
+		normalizeAiInterpretUsage()
 		_saveStorage({
 			lmpDate: lmpDate.value ? lmpDate.value.toISOString() : null,
 			dueDate: dueDate.value ? dueDate.value.toISOString() : null,
 			userInfo: { ...userInfo.value },
 			records: records.value,
 			checkupSchedules: checkupSchedules.value,
-			openid: openid.value
+			openid: openid.value,
+			aiInterpretUsage: { ...aiInterpretUsage.value }
 		})
 	}
 
@@ -313,11 +321,78 @@ export const useHealthStore = defineStore('health', () => {
 			.sort((a, b) => a.checkup_date.localeCompare(b.checkup_date))
 	})
 
+	const aiInterpretRemaining = computed(() => {
+		normalizeAiInterpretUsage()
+		return Math.max(0, AI_INTERPRET_DAILY_LIMIT - aiInterpretUsage.value.used)
+	})
+
+	const aiInterpretQuota = computed(() => {
+		normalizeAiInterpretUsage()
+		return {
+			date: aiInterpretUsage.value.date,
+			limit: AI_INTERPRET_DAILY_LIMIT,
+			used: aiInterpretUsage.value.used,
+			remaining: aiInterpretRemaining.value
+		}
+	})
+
 	function getRecordKey(date) {
 		const y = date.getFullYear()
 		const m = String(date.getMonth() + 1).padStart(2, '0')
 		const d = String(date.getDate()).padStart(2, '0')
 		return `${y}-${m}-${d}`
+	}
+
+	function normalizeAiInterpretUsage(input = aiInterpretUsage.value) {
+		const todayKey = getRecordKey(new Date())
+		const source = input && typeof input === 'object' ? input : {}
+		const hasUsageFields = source.used != null ||
+			source.used_today != null ||
+			source.ai_interpret_used_today != null ||
+			source.remaining != null
+		const date = source.date || source.used_date || source.ai_interpret_used_date || (hasUsageFields ? todayKey : '')
+		const usedRaw = source.used ?? source.used_today ?? source.ai_interpret_used_today ??
+			(source.remaining != null ? AI_INTERPRET_DAILY_LIMIT - Number(source.remaining) : 0)
+		const used = Math.max(0, Math.min(AI_INTERPRET_DAILY_LIMIT, Number(usedRaw) || 0))
+
+		const normalized = date === todayKey
+			? { date: todayKey, used }
+			: { date: todayKey, used: 0 }
+		if (
+			aiInterpretUsage.value.date !== normalized.date ||
+			aiInterpretUsage.value.used !== normalized.used
+		) {
+			aiInterpretUsage.value = normalized
+		}
+		return aiInterpretUsage.value
+	}
+
+	function canUseAiInterpret() {
+		normalizeAiInterpretUsage()
+		return aiInterpretUsage.value.used < AI_INTERPRET_DAILY_LIMIT
+	}
+
+	async function consumeAiInterpretQuota() {
+		if (!canUseAiInterpret()) return false
+		aiInterpretUsage.value.used += 1
+		_persist()
+		await syncAiInterpretQuotaToCloud()
+		return true
+	}
+
+	function updateAiInterpretQuota(usage) {
+		normalizeAiInterpretUsage(usage)
+		_persist()
+	}
+
+	async function syncAiInterpretQuotaToCloud() {
+		if (!isAuthed()) return false
+		try {
+			return await syncProfileToCloud()
+		} catch (e) {
+			console.error('syncAiInterpretQuotaToCloud failed:', e)
+			return false
+		}
 	}
 
 	function getRecord(date) {
@@ -354,6 +429,7 @@ export const useHealthStore = defineStore('health', () => {
 			if (data.dueDate) dueDate.value = new Date(data.dueDate)
 			if (data.userInfo) Object.assign(userInfo.value, data.userInfo)
 			if (data.openid) openid.value = data.openid
+			if (data.aiInterpretUsage) normalizeAiInterpretUsage(data.aiInterpretUsage)
 		}
 		userProfileLoaded.value = true
 	}
@@ -389,6 +465,7 @@ export const useHealthStore = defineStore('health', () => {
 			hospital: userInfo.value.hospital || '',
 			doctor: userInfo.value.doctor || '',
 			hospitalPhone: userInfo.value.hospitalPhone || '',
+			aiInterpretUsage: { ...normalizeAiInterpretUsage() },
 		}
 
 		try {
@@ -443,6 +520,13 @@ export const useHealthStore = defineStore('health', () => {
 					if (pd.hospital) userInfo.value.hospital = pd.hospital
 					if (pd.doctor) userInfo.value.doctor = pd.doctor
 					if (pd.hospitalPhone) userInfo.value.hospitalPhone = pd.hospitalPhone
+					if (pd.aiInterpretUsage) normalizeAiInterpretUsage(pd.aiInterpretUsage)
+				}
+				if (serverUser.ai_interpret_used_date || serverUser.ai_interpret_used_today != null) {
+					normalizeAiInterpretUsage({
+						date: serverUser.ai_interpret_used_date,
+						used: serverUser.ai_interpret_used_today
+					})
 				}
 				_persist()
 				return true
@@ -800,6 +884,7 @@ export const useHealthStore = defineStore('health', () => {
 				if (data.records) records.value = data.records
 				if (data.checkupSchedules) checkupSchedules.value = data.checkupSchedules
 				if (data.openid) openid.value = data.openid
+				if (data.aiInterpretUsage) normalizeAiInterpretUsage(data.aiInterpretUsage)
 			}
 
 			if (!openid.value) {
@@ -883,6 +968,13 @@ export const useHealthStore = defineStore('health', () => {
 		nextCheckup,
 		completedCheckups,
 		upcomingCheckups,
+		aiInterpretUsage,
+		aiInterpretRemaining,
+		aiInterpretQuota,
+		canUseAiInterpret,
+		consumeAiInterpretQuota,
+		updateAiInterpretQuota,
+		syncAiInterpretQuotaToCloud,
 		loadCheckupSchedules,
 		initCheckupSchedules,
 		updateCheckupSchedule,

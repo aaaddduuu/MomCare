@@ -35,6 +35,13 @@
 				@itemTap="handleRecordTap"
 			/>
 
+			<!-- AI 服务 -->
+			<ProfileSection
+				title="AI 服务"
+				:items="aiServiceItems"
+				@itemTap="handleAiServiceTap"
+			/>
+
 			<!-- 待办 & 提醒 -->
 			<ProfileSection
 				title="待办 & 提醒"
@@ -207,6 +214,22 @@ const recordItems = computed(() => {
 ]
 })
 
+const aiServiceItems = computed(() => {
+	const quota = healthStore.aiInterpretQuota
+	const remaining = quota.remaining
+	const used = quota.used
+	return [
+		{
+			icon: '✦',
+			iconBg: '#FAEAEE',
+			title: 'AI 解读次数',
+			subtitle: remaining > 0 ? `今日剩余 ${remaining} 次 · 已用 ${used} / ${quota.limit}` : '今日次数已用完，明天恢复',
+			badge: `${remaining}/${quota.limit}`,
+			action: 'aiQuota'
+		}
+	]
+})
+
 // 待产包进度（从本地存储读取）
 const hospitalBagSubtitle = computed(() => {
 	try {
@@ -308,6 +331,15 @@ function handleRecordTap(item) {
 		uni.switchTab({ url: routes.archives })
 	} else if (routes[item.action]) {
 		navigateToPage(routes[item.action])
+	}
+}
+
+function handleAiServiceTap(item) {
+	if (item.action === 'aiQuota') {
+		uni.showToast({
+			title: healthStore.aiInterpretRemaining > 0 ? `今日还可解读 ${healthStore.aiInterpretRemaining} 次` : '明天会恢复 5 次解读机会',
+			icon: 'none'
+		})
 	}
 }
 

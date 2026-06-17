@@ -131,6 +131,23 @@
 			"description": "AI 配额下次重置日期",
 			"title": "配额重置日期"
 		},
+		"ai_interpret_daily_limit": {
+			"bsonType": "int",
+			"description": "每日免费 AI 解读次数配额",
+			"title": "每日AI解读配额",
+			"default": 5
+		},
+		"ai_interpret_used_date": {
+			"bsonType": "string",
+			"description": "AI 解读次数使用日期 (YYYY-MM-DD)",
+			"title": "AI解读使用日期"
+		},
+		"ai_interpret_used_today": {
+			"bsonType": "int",
+			"description": "当日已使用 AI 解读次数",
+			"title": "今日已用AI解读次数",
+			"default": 0
+		},
 		"preferred_llm": {
 			"bsonType": "string",
 			"description": "用户首选的大语言模型",

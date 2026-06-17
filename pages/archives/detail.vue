@@ -192,8 +192,10 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { navigateToPage } from '@/utils/navigation.js'
 import NavBar from '@/components/NavBar.vue'
 import { useReportStore, REPORT_TYPES, getTypeInfo } from '@/stores/report'
+import { useHealthStore } from '@/stores/health.js'
 
 const reportStore = useReportStore()
+const healthStore = useHealthStore()
 const instance = getCurrentInstance().proxy
 const typeOptions = REPORT_TYPES
 
@@ -218,6 +220,9 @@ const currentImageUrl = computed(() => {
 const aiStatus = computed(() => report.value.ai_status || 'pending')
 
 const aiCardClass = computed(() => {
+  if ((aiStatus.value === 'pending' || aiStatus.value === 'failed') && healthStore.aiInterpretRemaining <= 0) {
+    return 'ai-card-limited'
+  }
   switch (aiStatus.value) {
     case 'done': return 'ai-card-done'
     case 'processing': return 'ai-card-processing'
@@ -227,6 +232,9 @@ const aiCardClass = computed(() => {
 })
 
 const aiCardIcon = computed(() => {
+  if ((aiStatus.value === 'pending' || aiStatus.value === 'failed') && healthStore.aiInterpretRemaining <= 0) {
+    return '⏰'
+  }
   switch (aiStatus.value) {
     case 'done': return '✅'
     case 'processing': return '⏳'
@@ -236,6 +244,9 @@ const aiCardIcon = computed(() => {
 })
 
 const aiCardTitle = computed(() => {
+  if ((aiStatus.value === 'pending' || aiStatus.value === 'failed') && healthStore.aiInterpretRemaining <= 0) {
+    return '今日解读次数已用完'
+  }
   switch (aiStatus.value) {
     case 'done': return '查看 AI 解读'
     case 'processing': return 'AI 解读中…'
@@ -252,8 +263,8 @@ const aiCardSub = computed(() => {
     return '已解读 · 整体正常'
   }
   if (aiStatus.value === 'processing') return '正在分析报告内容…'
-  if (aiStatus.value === 'failed') return '点击重新触发 AI 解读'
-  return '点击开始智能解读'
+  if (aiStatus.value === 'failed') return `点击重新触发 AI 解读 · 今日剩余 ${healthStore.aiInterpretRemaining} 次`
+  return `点击开始智能解读 · 今日剩余 ${healthStore.aiInterpretRemaining} 次`
 })
 
 onLoad(async (options) => {
@@ -365,6 +376,10 @@ async function onAiCardTap() {
   if (aiStatus.value === 'done') {
     navigateToPage(`/pages/archives/ai-result?id=${reportId.value}`)
   } else if (aiStatus.value === 'failed' || aiStatus.value === 'pending') {
+    if (!healthStore.canUseAiInterpret()) {
+      uni.showToast({ title: '今日 5 次 AI 解读已用完，明天再来吧', icon: 'none', duration: 3000 })
+      return
+    }
     uni.showLoading({ title: '开始解读…' })
     await reportStore.triggerAiPipeline(reportId.value)
     await loadReport()
@@ -759,6 +774,7 @@ page {
 .ai-card-done { background: linear-gradient(135deg, #5BBF7C 0%, #4AAF6C 100%); }
 .ai-card-failed { background: linear-gradient(135deg, #F0A940 0%, #E09830 100%); }
 .ai-card-processing { opacity: 0.8; }
+.ai-card-limited { background: linear-gradient(135deg, #9C9890 0%, #6E6A64 100%); box-shadow: 0 8rpx 40rpx rgba(110, 106, 100, 0.22); }
 .ai-entry-icon {
   width: 88rpx; height: 88rpx;
   background: rgba(255, 255, 255, 0.2); border-radius: 24rpx;
