@@ -1,0 +1,21 @@
+{
+  "name": "孕途伴侣",
+  "appid": "__UNI__MOMCARE",
+  "description": "面向准妈妈的孕期陪伴 App",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "locale": "zh-Hans",
+  "h5": {
+    "title": "孕途伴侣",
+    "router": {
+      "mode": "hash",
+      "base": "/"
+    },
+    "devServer": {
+      "port": 5173
+    }
+  },
+  "app-plus": {},
+  "mp-weixin": {}
+}

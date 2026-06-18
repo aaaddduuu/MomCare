@@ -1,12 +1,20 @@
 {
+  "scripts": {
+    "dev:h5": "UNI_INPUT_DIR=$PWD uni -p h5",
+    "build:h5": "UNI_INPUT_DIR=$PWD uni build -p h5",
+    "deploy": "npm run build:h5 && wrangler deploy --name momcare --assets dist/build/h5 --compatibility-date 2026-05-16 --keep-vars",
+    "preview": "wrangler dev --name momcare --assets dist/build/h5 --compatibility-date 2026-05-16"
+  },
   "dependencies": {
-    "pinia": "^2.1.7"
+    "@dcloudio/uni-app": "3.0.0-alpha-5010320260611001",
+    "@dcloudio/uni-h5": "3.0.0-alpha-5010320260611001",
+    "pinia": "2.1.7",
+    "vue": "3.4.21"
   },
   "devDependencies": {
-    "wrangler": "^4.88.0"
-  },
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "preview": "wrangler dev"
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5010320260611001",
+    "sass": "^1.94.2",
+    "vite": "5.2.8",
+    "wrangler": "^4.101.0"
   }
 }

@@ -1,5 +1,6 @@
 node_modules/
 unpackage/
+dist/
 .hbuilderx/
 .DS_Store
 openspec/
@@ -15,11 +16,9 @@ openspec/
 
 # Backend / API (private)
 worker/
-utils/
 
 # wrangler files
 .wrangler
 .dev.vars*
 !.dev.vars.example
 !.env.example
-manifest.json
